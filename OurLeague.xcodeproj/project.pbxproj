@@ -105,7 +105,7 @@
 		DE7A184E2B282579008E5CC3 /* OurLeague */ = {
 			isa = PBXGroup;
 			children = (
-				DE7A187B2B289FF9008E5CC3 /* App */,
+				DE7A188E2B28AC6E008E5CC3 /* App */,
 				DE7A187C2B28A005008E5CC3 /* Home */,
 				DE7A18572B28257B008E5CC3 /* Preview Content */,
 			);
@@ -135,18 +135,6 @@
 				DE7A186E2B28257B008E5CC3 /* OurLeagueUITestsLaunchTests.swift */,
 			);
 			path = OurLeagueUITests;
-			sourceTree = "<group>";
-		};
-		DE7A187B2B289FF9008E5CC3 /* App */ = {
-			isa = PBXGroup;
-			children = (
-				DE7A18872B28A438008E5CC3 /* Database */,
-				DE7A187E2B28A02D008E5CC3 /* Resource */,
-				DE7A187D2B28A018008E5CC3 /* Model */,
-				DE7A184F2B282579008E5CC3 /* OurLeagueApp.swift */,
-			);
-			name = App;
-			path = "메ㅔ";
 			sourceTree = "<group>";
 		};
 		DE7A187C2B28A005008E5CC3 /* Home */ = {
@@ -187,6 +175,17 @@
 				DE7A18882B28A449008E5CC3 /* FirebaseDBManager.swift */,
 			);
 			path = Database;
+			sourceTree = "<group>";
+		};
+		DE7A188E2B28AC6E008E5CC3 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				DE7A184F2B282579008E5CC3 /* OurLeagueApp.swift */,
+				DE7A18872B28A438008E5CC3 /* Database */,
+				DE7A187E2B28A02D008E5CC3 /* Resource */,
+				DE7A187D2B28A018008E5CC3 /* Model */,
+			);
+			path = App;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
