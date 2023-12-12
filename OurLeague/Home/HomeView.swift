@@ -6,11 +6,10 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct HomeView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [League]
+//    @Environment(\.modelContext) private var modelContext
+//    @Query private var items: [League]
     
     private var addGameButton: some View {
         HStack {
@@ -30,14 +29,22 @@ struct HomeView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                VStack {
-                    Spacer()
-                    addGameButton
-                    
-                    Spacer()
-                        .frame(height: 30)
+        ZStack {
+            VStack {
+                Spacer()
+                addGameButton
+                
+                Spacer()
+                    .frame(height: 30)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    Image(systemName: "ellipsis")
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundStyle(.black)
                 }
             }
         }
@@ -86,5 +93,5 @@ struct HomeView: View {
 
 #Preview {
     HomeView()
-        .modelContainer(for: League.self, inMemory: true)
+//        .modelContainer(for: League.self, inMemory: true)
 }
