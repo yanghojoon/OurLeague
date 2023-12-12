@@ -10,9 +10,11 @@ import SwiftData
 
 @main
 struct OurLeagueApp: App {
+    @State private var needToShowStoreError = false
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            League.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -25,7 +27,7 @@ struct OurLeagueApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView()
         }
         .modelContainer(sharedModelContainer)
     }
