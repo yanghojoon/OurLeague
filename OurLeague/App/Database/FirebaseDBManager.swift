@@ -14,6 +14,4 @@ struct FirebaseDBManager {
     private let firebaseDB = Firestore.firestore()
     
     private init() { }
-    
-    
 }

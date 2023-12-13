@@ -19,6 +19,8 @@
 		DE7A18862B28A370008E5CC3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = DE7A18852B28A370008E5CC3 /* FirebaseFirestore */; };
 		DE7A18892B28A449008E5CC3 /* FirebaseDBManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18882B28A449008E5CC3 /* FirebaseDBManager.swift */; };
 		DE7A188D2B28AB66008E5CC3 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = DE7A188C2B28AB66008E5CC3 /* GoogleService-Info.plist */; };
+		DE7A18912B29E617008E5CC3 /* InformationInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18902B29E617008E5CC3 /* InformationInputView.swift */; };
+		DE7A18942B29F479008E5CC3 /* SearchClubModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18932B29F479008E5CC3 /* SearchClubModalView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,6 +54,8 @@
 		DE7A186E2B28257B008E5CC3 /* OurLeagueUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OurLeagueUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		DE7A18882B28A449008E5CC3 /* FirebaseDBManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseDBManager.swift; sourceTree = "<group>"; };
 		DE7A188C2B28AB66008E5CC3 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		DE7A18902B29E617008E5CC3 /* InformationInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InformationInputView.swift; sourceTree = "<group>"; };
+		DE7A18932B29F479008E5CC3 /* SearchClubModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchClubModalView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +110,7 @@
 			isa = PBXGroup;
 			children = (
 				DE7A188E2B28AC6E008E5CC3 /* App */,
+				DE7A188F2B29E40C008E5CC3 /* MyInformation */,
 				DE7A187C2B28A005008E5CC3 /* Home */,
 				DE7A18572B28257B008E5CC3 /* Preview Content */,
 			);
@@ -186,6 +191,23 @@
 				DE7A187D2B28A018008E5CC3 /* Model */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		DE7A188F2B29E40C008E5CC3 /* MyInformation */ = {
+			isa = PBXGroup;
+			children = (
+				DE7A18922B29F469008E5CC3 /* SearchClub */,
+				DE7A18902B29E617008E5CC3 /* InformationInputView.swift */,
+			);
+			path = MyInformation;
+			sourceTree = "<group>";
+		};
+		DE7A18922B29F469008E5CC3 /* SearchClub */ = {
+			isa = PBXGroup;
+			children = (
+				DE7A18932B29F479008E5CC3 /* SearchClubModalView.swift */,
+			);
+			path = SearchClub;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -326,7 +348,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DE7A18912B29E617008E5CC3 /* InformationInputView.swift in Sources */,
 				DE7A18892B28A449008E5CC3 /* FirebaseDBManager.swift in Sources */,
+				DE7A18942B29F479008E5CC3 /* SearchClubModalView.swift in Sources */,
 				DE7A18522B282579008E5CC3 /* HomeView.swift in Sources */,
 				DE7A18542B282579008E5CC3 /* League.swift in Sources */,
 				DE7A18502B282579008E5CC3 /* OurLeagueApp.swift in Sources */,
