@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DE7757F02D54BD8900E2255D /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7757EF2D54BD8900E2255D /* SplashView.swift */; };
 		DE7A18502B282579008E5CC3 /* OurLeagueApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A184F2B282579008E5CC3 /* OurLeagueApp.swift */; };
 		DE7A18522B282579008E5CC3 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18512B282579008E5CC3 /* HomeView.swift */; };
 		DE7A18542B282579008E5CC3 /* League.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18532B282579008E5CC3 /* League.swift */; };
@@ -41,6 +42,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		DE7757EF2D54BD8900E2255D /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		DE7A184C2B282579008E5CC3 /* OurLeague.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OurLeague.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE7A184F2B282579008E5CC3 /* OurLeagueApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OurLeagueApp.swift; sourceTree = "<group>"; };
 		DE7A18512B282579008E5CC3 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -85,6 +87,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		DE7757EE2D54BD6D00E2255D /* Splash */ = {
+			isa = PBXGroup;
+			children = (
+				DE7757EF2D54BD8900E2255D /* SplashView.swift */,
+			);
+			path = Splash;
+			sourceTree = "<group>";
+		};
 		DE7A18432B282579008E5CC3 = {
 			isa = PBXGroup;
 			children = (
@@ -110,6 +120,7 @@
 			isa = PBXGroup;
 			children = (
 				DE7A188E2B28AC6E008E5CC3 /* App */,
+				DE7757EE2D54BD6D00E2255D /* Splash */,
 				DE7A188F2B29E40C008E5CC3 /* MyInformation */,
 				DE7A187C2B28A005008E5CC3 /* Home */,
 				DE7A18572B28257B008E5CC3 /* Preview Content */,
@@ -354,6 +365,7 @@
 				DE7A18522B282579008E5CC3 /* HomeView.swift in Sources */,
 				DE7A18542B282579008E5CC3 /* League.swift in Sources */,
 				DE7A18502B282579008E5CC3 /* OurLeagueApp.swift in Sources */,
+				DE7757F02D54BD8900E2255D /* SplashView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
