@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		DE7757F02D54BD8900E2255D /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7757EF2D54BD8900E2255D /* SplashView.swift */; };
+		DE7757F22D54CD3F00E2255D /* Player.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7757F12D54CD3F00E2255D /* Player.swift */; };
+		DE7757F52D54D73700E2255D /* ClubInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7757F42D54D73700E2255D /* ClubInfoView.swift */; };
+		DE7757F82D54D7DC00E2255D /* GameRecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7757F72D54D7DC00E2255D /* GameRecordView.swift */; };
 		DE7A18502B282579008E5CC3 /* OurLeagueApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A184F2B282579008E5CC3 /* OurLeagueApp.swift */; };
 		DE7A18522B282579008E5CC3 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18512B282579008E5CC3 /* HomeView.swift */; };
 		DE7A18542B282579008E5CC3 /* League.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18532B282579008E5CC3 /* League.swift */; };
@@ -43,6 +46,9 @@
 
 /* Begin PBXFileReference section */
 		DE7757EF2D54BD8900E2255D /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
+		DE7757F12D54CD3F00E2255D /* Player.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player.swift; sourceTree = "<group>"; };
+		DE7757F42D54D73700E2255D /* ClubInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClubInfoView.swift; sourceTree = "<group>"; };
+		DE7757F72D54D7DC00E2255D /* GameRecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameRecordView.swift; sourceTree = "<group>"; };
 		DE7A184C2B282579008E5CC3 /* OurLeague.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OurLeague.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE7A184F2B282579008E5CC3 /* OurLeagueApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OurLeagueApp.swift; sourceTree = "<group>"; };
 		DE7A18512B282579008E5CC3 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -95,6 +101,22 @@
 			path = Splash;
 			sourceTree = "<group>";
 		};
+		DE7757F32D54D71600E2255D /* Club */ = {
+			isa = PBXGroup;
+			children = (
+				DE7757F42D54D73700E2255D /* ClubInfoView.swift */,
+			);
+			path = Club;
+			sourceTree = "<group>";
+		};
+		DE7757F62D54D7C800E2255D /* GameRecord */ = {
+			isa = PBXGroup;
+			children = (
+				DE7757F72D54D7DC00E2255D /* GameRecordView.swift */,
+			);
+			path = GameRecord;
+			sourceTree = "<group>";
+		};
 		DE7A18432B282579008E5CC3 = {
 			isa = PBXGroup;
 			children = (
@@ -123,6 +145,8 @@
 				DE7757EE2D54BD6D00E2255D /* Splash */,
 				DE7A188F2B29E40C008E5CC3 /* MyInformation */,
 				DE7A187C2B28A005008E5CC3 /* Home */,
+				DE7757F32D54D71600E2255D /* Club */,
+				DE7757F62D54D7C800E2255D /* GameRecord */,
 				DE7A18572B28257B008E5CC3 /* Preview Content */,
 			);
 			path = OurLeague;
@@ -165,6 +189,7 @@
 			isa = PBXGroup;
 			children = (
 				DE7A18532B282579008E5CC3 /* League.swift */,
+				DE7757F12D54CD3F00E2255D /* Player.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -362,10 +387,13 @@
 				DE7A18912B29E617008E5CC3 /* InformationInputView.swift in Sources */,
 				DE7A18892B28A449008E5CC3 /* FirebaseDBManager.swift in Sources */,
 				DE7A18942B29F479008E5CC3 /* SearchClubModalView.swift in Sources */,
+				DE7757F52D54D73700E2255D /* ClubInfoView.swift in Sources */,
 				DE7A18522B282579008E5CC3 /* HomeView.swift in Sources */,
 				DE7A18542B282579008E5CC3 /* League.swift in Sources */,
+				DE7757F22D54CD3F00E2255D /* Player.swift in Sources */,
 				DE7A18502B282579008E5CC3 /* OurLeagueApp.swift in Sources */,
 				DE7757F02D54BD8900E2255D /* SplashView.swift in Sources */,
+				DE7757F82D54D7DC00E2255D /* GameRecordView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -535,9 +563,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -565,9 +592,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
