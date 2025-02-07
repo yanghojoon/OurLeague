@@ -15,7 +15,40 @@ struct HomeView: View {
             name: "온더코트",
             member: [],
             gameHistory: [],
-            intendedGame: [GameByDay(date: Date(), startTime: Date(), endTime: Date(), games: [], participants: [], location: "북중")],
+            intendedGame: [
+                GameByDay(
+                    date: Date(),
+                    startTime: Date(),
+                    endTime: Date(),
+                    games: [],
+                    participants: [],
+                    location: "북중"
+                ),
+                GameByDay(
+                    date: Date().addingTimeInterval(123401),
+                    startTime: Date(),
+                    endTime: Date(),
+                    games: [],
+                    participants: [],
+                    location: "신봉고가"
+                ),
+                GameByDay(
+                    date: Date().addingTimeInterval(223401),
+                    startTime: Date(),
+                    endTime: Date(),
+                    games: [],
+                    participants: [],
+                    location: "긴긴긴긴 테니스 장 이름이 길다 길어"
+                ),
+                GameByDay(
+                    date: Date().addingTimeInterval(523401),
+                    startTime: Date(),
+                    endTime: Date(),
+                    games: [],
+                    participants: [],
+                    location: "긴긴긴"
+                ),
+            ],
             locations: ["북중", "신봉고가"]
         ),
         totalGameCount: 99,
@@ -29,8 +62,12 @@ struct HomeView: View {
         GeometryReader { proxy in
             NavigationStack {
                 ZStack {
-                    Color.white
-                        .ignoresSafeArea()
+                    LinearGradient(
+                        gradient: Gradient(colors: [Color.green, Color.orange]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .ignoresSafeArea()
                     VStack {
                         Spacer()
                             .frame(height: 20)
@@ -161,7 +198,22 @@ struct HomeView: View {
                     .frame(width: viewWidth - 180, height: 200)
                     Spacer()
 
-                    scheduleListView
+                    VStack {
+                        Spacer().frame(height: 20)
+                        Text("예정 경기")
+                            .font(.caption)
+                        scheduleListView
+//                            .frame(
+//                                height: CGFloat(playerInfo?.club.intendedGame.count ?? .zero)
+//                            )
+                        if playerInfo?.club.intendedGame.count ?? 0 > 3 {
+                            Text("+ \((playerInfo?.club.intendedGame.count ?? 0) - 3)")
+                                .font(.footnote)
+                        }
+                        Spacer()
+                    }
+                    Spacer()
+                        .frame(width: 10)
                 }
 //                Spacer()
             }
@@ -169,43 +221,35 @@ struct HomeView: View {
     }
 
     private var scheduleListView: some View {
-        let gridItems = playerInfo?.club.intendedGame.map({ _ in GridItem(.fixed(40)) }) ?? []
-        return LazyVGrid(columns: gridItems) {
-            ForEach(playerInfo?.club.intendedGame ?? [], id: \.self) { intendedGame  in
+        let gridItems = playerInfo?.club.intendedGame
+            .map({ _ in GridItem(.fixed(40), spacing: 5) })
+            .prefix(3) ?? []
+        return LazyHGrid(
+            rows: Array(gridItems),
+            spacing: 5
+        ) {
+            ForEach(Array(playerInfo?.club.intendedGame.prefix(upTo: 3) ?? []), id: \.self) { intendedGame  in
                 scheduleView(intendedGame: intendedGame)
             }
         }
     }
 
     private func scheduleView(intendedGame: GameByDay) -> some View {
-        let colors = [Color.blue, Color.green, Color.red]
         let dateFormatter: DateFormatter = {
             let formatter = DateFormatter()
-            formatter.dateFormat = "hh:mm"
+            formatter.dateFormat = "M월 d일 HH시"
             return formatter
         }()
 
         return RoundedRectangle(cornerRadius: 8)
             .frame(width: 90, height: 40)
-            .foregroundStyle(colors.randomElement() ?? Color.green)
+            .foregroundStyle(Color.green)
             .overlay {
                 VStack {
                     Text(intendedGame.location)
                         .font(.caption)
-                    HStack {
-                        Spacer()
-                        Text(intendedGame.startTime, formatter: dateFormatter)
-                            .font(.caption2)
-                        Spacer()
-                            .frame(width: 0)
-                        Text(" ~ ")
-                            .font(.caption2)
-                        Spacer()
-                            .frame(width: 0)
-                        Text(intendedGame.endTime, formatter: dateFormatter)
-                            .font(.caption2)
-                        Spacer()
-                    }
+                    Text(intendedGame.startTime, formatter: dateFormatter)
+                        .font(.caption2)
                 }
                 .foregroundStyle(Color.white)
             }
@@ -216,7 +260,7 @@ struct HomeView: View {
         // TODO: 게임 생성 화면 전환
         }, label: {
             ZStack {
-                Color.green
+                Color.white
                 Text("Game Start!")
                     .font(.subheadline)
                     .fontWeight(.bold)
