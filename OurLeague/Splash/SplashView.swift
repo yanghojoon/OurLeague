@@ -17,6 +17,7 @@ struct SplashView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+            .ignoresSafeArea()
             Image(systemName: "tennis.racket.circle")
                 .resizable()
                 .frame(width: 100, height: 100)
@@ -25,7 +26,6 @@ struct SplashView: View {
                     .transition(.opacity)
             }
         }
-        .ignoresSafeArea()
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(3)) {
                 navigateToNextPage = true

@@ -27,8 +27,8 @@ struct OurLeagueApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationStack {
-                InformationInputView()
-//                HomeView()
+//                InformationInputView()
+                SplashView()
             }
         }
     }

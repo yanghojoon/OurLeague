@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct CalenderView: View {
+struct CalendarView: View {
     @State var month: Date
     @State var offset: CGSize = CGSize()
     @State var clickedDates: Set<Date> = []
@@ -91,16 +91,11 @@ struct CalenderView: View {
                     } else {
                         let date = getDate(for: index - firstWeekday)
                         let day = index - firstWeekday + 1
-                        let clicked = clickedDates.contains(date)
+                        let clicked = clickedDates.contains(
+                            where: { Self.dayDateFormatter.string(from: $0) == Self.dayDateFormatter.string(from: date) }
+                        )
 
                         CellView(day: day, clicked: clicked)
-                            .onTapGesture {
-                                if clicked {
-                                    clickedDates.remove(date)
-                                } else {
-                                    clickedDates.insert(date)
-                                }
-                            }
                     }
                 }
             }
@@ -130,7 +125,7 @@ private struct CellView: View {
 }
 
 // MARK: - 내부 메서드
-private extension CalenderView {
+private extension CalendarView {
     /// 특정 해당 날짜
     private func getDate(for day: Int) -> Date {
         return Calendar.current.date(byAdding: .day, value: day, to: startOfMonth())!
@@ -165,10 +160,16 @@ private extension CalenderView {
 }
 
 // MARK: - Static 프로퍼티
-extension CalenderView {
+extension CalendarView {
     static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy.MM"
+        return formatter
+    }()
+    
+    static let dayDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy.MM.dd"
         return formatter
     }()
 

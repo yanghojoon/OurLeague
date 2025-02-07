@@ -29,7 +29,7 @@ struct HomeView: View {
         GeometryReader { proxy in
             NavigationStack {
                 ZStack {
-                    Color.orange.opacity(0.3)
+                    Color.white
                         .ignoresSafeArea()
                     VStack {
                         Spacer()
@@ -105,7 +105,9 @@ struct HomeView: View {
     }
 
     private func reportView(viewWidth: CGFloat) -> some View {
-        ZStack {
+        let totalGameCount = playerInfo?.totalGameCount ?? 1
+        let winCount = playerInfo?.winCount ?? 0
+        return ZStack {
             Color.white
 
             VStack {
@@ -131,7 +133,7 @@ struct HomeView: View {
                 HStack {
                     Text("📊 승률")
                         .font(.subheadline)
-                    Text("\((playerInfo?.winCount ?? 0) / (playerInfo?.totalGameCount ?? 1) * 100)%")
+                    Text("\(Int(Double(winCount) / Double(totalGameCount) * 100))%")
                         .font(.subheadline)
                 }
                 .frame(width: viewWidth - 70, alignment: .leading)
@@ -152,7 +154,7 @@ struct HomeView: View {
                 HStack {
                     Spacer()
                         .frame(width: 10)
-                    CalenderView(
+                    CalendarView(
                         month: Date(),
                         clickedDates: Set(playerInfo?.club.intendedGame.map({ $0.date }) ?? [])
                     )
