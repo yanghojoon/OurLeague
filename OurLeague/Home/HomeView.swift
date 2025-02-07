@@ -8,7 +8,20 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var playerInfo: Player?
+    @State private var playerInfo: Player? = Player(
+        name: "호준",
+        club: Club(
+            id: UUID().uuidString,
+            name: "온더코트",
+            member: [],
+            gameHistory: [],
+            intendedGame: [GameByDay(date: Date(), startTime: Date(), endTime: Date(), games: [], participants: [], location: "북중")],
+            locations: ["북중", "신봉고가"]
+        ),
+        totalGameCount: 99,
+        winCount: 72,
+        ranking: 1
+    )
     @State private var needToGoClubView = false
     @State private var date = Date()
 
@@ -31,7 +44,7 @@ struct HomeView: View {
                         Spacer()
                             .frame(height: 10)
                         intendedGameView(viewWidth: proxy.size.width)
-                            .frame(width: proxy.size.width - 40, height: 300)
+                            .frame(width: proxy.size.width - 40, height: 220)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             .shadow(radius: 4)
                         Spacer()
@@ -118,7 +131,7 @@ struct HomeView: View {
                 HStack {
                     Text("📊 승률")
                         .font(.subheadline)
-                    Text("\((playerInfo?.winCount ?? 0) / (playerInfo?.totalGameCount ?? 1))%")
+                    Text("\((playerInfo?.winCount ?? 0) / (playerInfo?.totalGameCount ?? 1) * 100)%")
                         .font(.subheadline)
                 }
                 .frame(width: viewWidth - 70, alignment: .leading)
@@ -130,24 +143,70 @@ struct HomeView: View {
     private func intendedGameView(viewWidth: CGFloat) -> some View {
         ZStack {
             Color.white
-
             VStack {
-                Spacer()
-                    .frame(height: .zero)
-                Color.red
-                    .frame(width: .infinity, height: 16)
-                Spacer()
-                    .frame(height: 20)
+//                Spacer()
+//                    .frame(height: .zero)
+//                Color.red
+//                    .frame(width: .infinity, height: 16)
+//                Spacer()
                 HStack {
+                    Spacer()
+                        .frame(width: 10)
                     CalenderView(
                         month: Date(),
                         clickedDates: Set(playerInfo?.club.intendedGame.map({ $0.date }) ?? [])
                     )
+                    .frame(width: viewWidth - 180, height: 200)
                     Spacer()
+
+                    scheduleListView
                 }
-                Spacer()
+//                Spacer()
             }
         }
+    }
+
+    private var scheduleListView: some View {
+        let gridItems = playerInfo?.club.intendedGame.map({ _ in GridItem(.fixed(40)) }) ?? []
+        return LazyVGrid(columns: gridItems) {
+            ForEach(playerInfo?.club.intendedGame ?? [], id: \.self) { intendedGame  in
+                scheduleView(intendedGame: intendedGame)
+            }
+        }
+    }
+
+    private func scheduleView(intendedGame: GameByDay) -> some View {
+        let colors = [Color.blue, Color.green, Color.red]
+        let dateFormatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "hh:mm"
+            return formatter
+        }()
+
+        return RoundedRectangle(cornerRadius: 8)
+            .frame(width: 90, height: 40)
+            .foregroundStyle(colors.randomElement() ?? Color.green)
+            .overlay {
+                VStack {
+                    Text(intendedGame.location)
+                        .font(.caption)
+                    HStack {
+                        Spacer()
+                        Text(intendedGame.startTime, formatter: dateFormatter)
+                            .font(.caption2)
+                        Spacer()
+                            .frame(width: 0)
+                        Text(" ~ ")
+                            .font(.caption2)
+                        Spacer()
+                            .frame(width: 0)
+                        Text(intendedGame.endTime, formatter: dateFormatter)
+                            .font(.caption2)
+                        Spacer()
+                    }
+                }
+                .foregroundStyle(Color.white)
+            }
     }
 
     private func addGameButton(viewWidth: CGFloat) -> some View {

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Player: Codable {
+struct Player: Codable, Hashable {
     let name: String
     let club: Club
     let totalGameCount: Int
