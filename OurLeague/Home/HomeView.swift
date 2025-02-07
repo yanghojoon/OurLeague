@@ -10,6 +10,7 @@ import SwiftUI
 struct HomeView: View {
     @State private var playerInfo: Player?
     @State private var needToGoClubView = false
+    @State private var date = Date()
 
     var body: some View {
         GeometryReader { proxy in
@@ -22,8 +23,19 @@ struct HomeView: View {
                             .frame(height: 20)
                         clubInfoView(viewWidth: proxy.size.width)
                         Spacer()
+                            .frame(height: 10)
+                        reportView(viewWidth: proxy.size.width)
+                            .frame(width: proxy.size.width - 40, height: 100)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .shadow(radius: 4)
+                        Spacer()
+                            .frame(height: 10)
+                        intendedGameView(viewWidth: proxy.size.width)
+                            .frame(width: proxy.size.width - 40, height: 300)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .shadow(radius: 4)
+                        Spacer()
                         addGameButton(viewWidth: proxy.size.width)
-                        
                         Spacer()
                             .frame(height: 30)
                     }
@@ -74,9 +86,68 @@ struct HomeView: View {
                 Spacer()
             }
         }
-        .frame(width: viewWidth - 30, height: 150)
+        .frame(width: viewWidth - 40, height: 130)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(radius: 4)
+    }
+
+    private func reportView(viewWidth: CGFloat) -> some View {
+        ZStack {
+            Color.white
+
+            VStack {
+                Spacer()
+                HStack {
+                    Text("🥇 순위")
+                        .font(.subheadline)
+                    Text("\(playerInfo?.ranking ?? 0)위")
+                        .font(.subheadline)
+                }
+                .frame(width: viewWidth - 70, alignment: .leading)
+                Spacer()
+                    .frame(height: 5)
+                HStack {
+                    Text("🏆 전적")
+                        .font(.subheadline)
+                    Text("\(playerInfo?.totalGameCount ?? 0)전 \(playerInfo?.winCount ?? 0)승")
+                        .font(.subheadline)
+                }
+                .frame(width: viewWidth - 70, alignment: .leading)
+                Spacer()
+                    .frame(height: 5)
+                HStack {
+                    Text("📊 승률")
+                        .font(.subheadline)
+                    Text("\((playerInfo?.winCount ?? 0) / (playerInfo?.totalGameCount ?? 1))%")
+                        .font(.subheadline)
+                }
+                .frame(width: viewWidth - 70, alignment: .leading)
+                Spacer()
+            }
+        }
+    }
+
+    private func intendedGameView(viewWidth: CGFloat) -> some View {
+        ZStack {
+            Color.white
+
+            VStack {
+                Spacer()
+                    .frame(height: .zero)
+                Color.red
+                    .frame(width: .infinity, height: 16)
+                Spacer()
+                    .frame(height: 20)
+                HStack {
+                    CalenderView(
+                        month: Date(),
+                        clickedDates: Set(playerInfo?.club.intendedGame.map({ $0.date }) ?? [])
+                    )
+                    Spacer()
+                }
+                Spacer()
+            }
+        }
     }
 
     private func addGameButton(viewWidth: CGFloat) -> some View {

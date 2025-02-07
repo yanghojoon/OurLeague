@@ -7,15 +7,10 @@
 
 import Foundation
 
-struct Player: Decodable {
+struct Player: Codable {
     let name: String
     let club: Club
     let totalGameCount: Int
     let winCount: Int
-}
-
-struct Club: Decodable {
-    let id: String
-    let name: String
-    let member: [Player]
+    let ranking: Int
 }
