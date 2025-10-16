@@ -21,12 +21,13 @@
 		DE7A18632B28257B008E5CC3 /* OurLeagueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18622B28257B008E5CC3 /* OurLeagueTests.swift */; };
 		DE7A186D2B28257B008E5CC3 /* OurLeagueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A186C2B28257B008E5CC3 /* OurLeagueUITests.swift */; };
 		DE7A186F2B28257B008E5CC3 /* OurLeagueUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A186E2B28257B008E5CC3 /* OurLeagueUITestsLaunchTests.swift */; };
-		DE7A18842B28A253008E5CC3 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = DE7A18832B28A253008E5CC3 /* FirebaseDatabase */; };
-		DE7A18862B28A370008E5CC3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = DE7A18852B28A370008E5CC3 /* FirebaseFirestore */; };
-		DE7A18892B28A449008E5CC3 /* FirebaseDBManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18882B28A449008E5CC3 /* FirebaseDBManager.swift */; };
-		DE7A188D2B28AB66008E5CC3 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = DE7A188C2B28AB66008E5CC3 /* GoogleService-Info.plist */; };
 		DE7A18912B29E617008E5CC3 /* InformationInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18902B29E617008E5CC3 /* InformationInputView.swift */; };
 		DE7A18942B29F479008E5CC3 /* SearchClubModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18932B29F479008E5CC3 /* SearchClubModalView.swift */; };
+		DEE4EBF62EA0AEC3004B62D1 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = DEE4EBF52EA0AEC3004B62D1 /* Auth */; };
+		DEE4EBF82EA0AEC3004B62D1 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = DEE4EBF72EA0AEC3004B62D1 /* Functions */; };
+		DEE4EBFA2EA0AEC3004B62D1 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = DEE4EBF92EA0AEC3004B62D1 /* PostgREST */; };
+		DEE4EBFC2EA0AEC3004B62D1 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = DEE4EBFB2EA0AEC3004B62D1 /* Realtime */; };
+		DEE4EBFE2EA0AEC3004B62D1 /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = DEE4EBFD2EA0AEC3004B62D1 /* Storage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,8 +65,6 @@
 		DE7A18682B28257B008E5CC3 /* OurLeagueUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OurLeagueUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE7A186C2B28257B008E5CC3 /* OurLeagueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OurLeagueUITests.swift; sourceTree = "<group>"; };
 		DE7A186E2B28257B008E5CC3 /* OurLeagueUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OurLeagueUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		DE7A18882B28A449008E5CC3 /* FirebaseDBManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseDBManager.swift; sourceTree = "<group>"; };
-		DE7A188C2B28AB66008E5CC3 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		DE7A18902B29E617008E5CC3 /* InformationInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InformationInputView.swift; sourceTree = "<group>"; };
 		DE7A18932B29F479008E5CC3 /* SearchClubModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchClubModalView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -75,8 +74,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DE7A18842B28A253008E5CC3 /* FirebaseDatabase in Frameworks */,
-				DE7A18862B28A370008E5CC3 /* FirebaseFirestore in Frameworks */,
+				DEE4EBFA2EA0AEC3004B62D1 /* PostgREST in Frameworks */,
+				DEE4EBF82EA0AEC3004B62D1 /* Functions in Frameworks */,
+				DEE4EBF62EA0AEC3004B62D1 /* Auth in Frameworks */,
+				DEE4EBFE2EA0AEC3004B62D1 /* Storage in Frameworks */,
+				DEE4EBFC2EA0AEC3004B62D1 /* Realtime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -203,7 +205,6 @@
 		DE7A187E2B28A02D008E5CC3 /* Resource */ = {
 			isa = PBXGroup;
 			children = (
-				DE7A188C2B28AB66008E5CC3 /* GoogleService-Info.plist */,
 				DE7A18552B28257B008E5CC3 /* Assets.xcassets */,
 			);
 			path = Resource;
@@ -219,7 +220,6 @@
 		DE7A18872B28A438008E5CC3 /* Database */ = {
 			isa = PBXGroup;
 			children = (
-				DE7A18882B28A449008E5CC3 /* FirebaseDBManager.swift */,
 			);
 			path = Database;
 			sourceTree = "<group>";
@@ -269,8 +269,11 @@
 			);
 			name = OurLeague;
 			packageProductDependencies = (
-				DE7A18832B28A253008E5CC3 /* FirebaseDatabase */,
-				DE7A18852B28A370008E5CC3 /* FirebaseFirestore */,
+				DEE4EBF52EA0AEC3004B62D1 /* Auth */,
+				DEE4EBF72EA0AEC3004B62D1 /* Functions */,
+				DEE4EBF92EA0AEC3004B62D1 /* PostgREST */,
+				DEE4EBFB2EA0AEC3004B62D1 /* Realtime */,
+				DEE4EBFD2EA0AEC3004B62D1 /* Storage */,
 			);
 			productName = OurLeague;
 			productReference = DE7A184C2B282579008E5CC3 /* OurLeague.app */;
@@ -345,7 +348,7 @@
 			);
 			mainGroup = DE7A18432B282579008E5CC3;
 			packageReferences = (
-				DE7A18812B28A172008E5CC3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				DEE4EBF42EA0AEC3004B62D1 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			productRefGroup = DE7A184D2B282579008E5CC3 /* Products */;
 			projectDirPath = "";
@@ -364,7 +367,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				DE7A18592B28257B008E5CC3 /* Preview Assets.xcassets in Resources */,
-				DE7A188D2B28AB66008E5CC3 /* GoogleService-Info.plist in Resources */,
 				DE7A18562B28257B008E5CC3 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -391,7 +393,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				DE7A18912B29E617008E5CC3 /* InformationInputView.swift in Sources */,
-				DE7A18892B28A449008E5CC3 /* FirebaseDBManager.swift in Sources */,
 				DE7757FE2D54F4FB00E2255D /* CalendarView.swift in Sources */,
 				DE7A18942B29F479008E5CC3 /* SearchClubModalView.swift in Sources */,
 				DE7757F52D54D73700E2255D /* ClubInfoView.swift in Sources */,
@@ -565,7 +566,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"OurLeague/Preview Content\"";
-				DEVELOPMENT_TEAM = FA464JRW3F;
+				DEVELOPMENT_TEAM = GLHK3966V7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -594,7 +595,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"OurLeague/Preview Content\"";
-				DEVELOPMENT_TEAM = FA464JRW3F;
+				DEVELOPMENT_TEAM = GLHK3966V7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -622,7 +623,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = FA464JRW3F;
+				DEVELOPMENT_TEAM = GLHK3966V7;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -642,7 +643,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = FA464JRW3F;
+				DEVELOPMENT_TEAM = GLHK3966V7;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -661,7 +662,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = FA464JRW3F;
+				DEVELOPMENT_TEAM = GLHK3966V7;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hojoon.OurLeagueUITests;
@@ -679,7 +680,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = FA464JRW3F;
+				DEVELOPMENT_TEAM = GLHK3966V7;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hojoon.OurLeagueUITests;
@@ -733,26 +734,41 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		DE7A18812B28A172008E5CC3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+		DEE4EBF42EA0AEC3004B62D1 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 10.19.0;
+				minimumVersion = 2.5.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		DE7A18832B28A253008E5CC3 /* FirebaseDatabase */ = {
+		DEE4EBF52EA0AEC3004B62D1 /* Auth */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DE7A18812B28A172008E5CC3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseDatabase;
+			package = DEE4EBF42EA0AEC3004B62D1 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
 		};
-		DE7A18852B28A370008E5CC3 /* FirebaseFirestore */ = {
+		DEE4EBF72EA0AEC3004B62D1 /* Functions */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DE7A18812B28A172008E5CC3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseFirestore;
+			package = DEE4EBF42EA0AEC3004B62D1 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Functions;
+		};
+		DEE4EBF92EA0AEC3004B62D1 /* PostgREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DEE4EBF42EA0AEC3004B62D1 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = PostgREST;
+		};
+		DEE4EBFB2EA0AEC3004B62D1 /* Realtime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DEE4EBF42EA0AEC3004B62D1 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Realtime;
+		};
+		DEE4EBFD2EA0AEC3004B62D1 /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DEE4EBF42EA0AEC3004B62D1 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Storage;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

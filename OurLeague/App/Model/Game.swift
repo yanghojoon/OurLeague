@@ -8,12 +8,11 @@
 import Foundation
 
 struct GameByDay: Codable, Hashable {
-    let date: Date
     let startTime: Date
     let endTime: Date
     let games: [Game]
     let participants: [Player]
-    let location: String
+//    let location: String
 }
 
 struct Game: Codable, Hashable {

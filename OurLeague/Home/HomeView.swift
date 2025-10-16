@@ -14,42 +14,7 @@ struct HomeView: View {
             id: UUID().uuidString,
             name: "온더코트",
             member: [],
-            gameHistory: [],
-            intendedGame: [
-                GameByDay(
-                    date: Date(),
-                    startTime: Date(),
-                    endTime: Date(),
-                    games: [],
-                    participants: [],
-                    location: "북중"
-                ),
-                GameByDay(
-                    date: Date().addingTimeInterval(123401),
-                    startTime: Date(),
-                    endTime: Date(),
-                    games: [],
-                    participants: [],
-                    location: "신봉고가"
-                ),
-                GameByDay(
-                    date: Date().addingTimeInterval(223401),
-                    startTime: Date(),
-                    endTime: Date(),
-                    games: [],
-                    participants: [],
-                    location: "긴긴긴긴 테니스 장 이름이 길다 길어"
-                ),
-                GameByDay(
-                    date: Date().addingTimeInterval(523401),
-                    startTime: Date(),
-                    endTime: Date(),
-                    games: [],
-                    participants: [],
-                    location: "긴긴긴"
-                ),
-            ],
-            locations: ["북중", "신봉고가"]
+            gameHistory: []
         ),
         totalGameCount: 99,
         winCount: 72,
@@ -80,7 +45,7 @@ struct HomeView: View {
                             .shadow(radius: 4)
                         Spacer()
                             .frame(height: 10)
-                        intendedGameView(viewWidth: proxy.size.width)
+                        gameHistoryView(viewWidth: proxy.size.width)
                             .frame(width: proxy.size.width - 40, height: 220)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             .shadow(radius: 4)
@@ -179,7 +144,7 @@ struct HomeView: View {
         }
     }
 
-    private func intendedGameView(viewWidth: CGFloat) -> some View {
+    private func gameHistoryView(viewWidth: CGFloat) -> some View {
         ZStack {
             Color.white
             VStack {
@@ -193,7 +158,7 @@ struct HomeView: View {
                         .frame(width: 10)
                     CalendarView(
                         month: Date(),
-                        clickedDates: Set(playerInfo?.club.intendedGame.map({ $0.date }) ?? [])
+                        clickedDates: Set(playerInfo?.club.gameHistory.map({ $0.startTime }) ?? [])
                     )
                     .frame(width: viewWidth - 180, height: 200)
                     Spacer()
@@ -206,8 +171,8 @@ struct HomeView: View {
 //                            .frame(
 //                                height: CGFloat(playerInfo?.club.intendedGame.count ?? .zero)
 //                            )
-                        if playerInfo?.club.intendedGame.count ?? 0 > 3 {
-                            Text("+ \((playerInfo?.club.intendedGame.count ?? 0) - 3)")
+                        if playerInfo?.club.gameHistory.count ?? 0 > 3 {
+                            Text("+ \((playerInfo?.club.gameHistory.count ?? 0) - 3)")
                                 .font(.footnote)
                         }
                         Spacer()
@@ -221,14 +186,14 @@ struct HomeView: View {
     }
 
     private var scheduleListView: some View {
-        let gridItems = playerInfo?.club.intendedGame
+        let gridItems = playerInfo?.club.gameHistory
             .map({ _ in GridItem(.fixed(40), spacing: 5) })
             .prefix(3) ?? []
         return LazyHGrid(
             rows: Array(gridItems),
             spacing: 5
         ) {
-            ForEach(Array(playerInfo?.club.intendedGame.prefix(upTo: 3) ?? []), id: \.self) { intendedGame  in
+            ForEach(Array(playerInfo?.club.gameHistory.prefix(3) ?? []), id: \.self) { intendedGame  in
                 scheduleView(intendedGame: intendedGame)
             }
         }
@@ -246,8 +211,6 @@ struct HomeView: View {
             .foregroundStyle(Color.green)
             .overlay {
                 VStack {
-                    Text(intendedGame.location)
-                        .font(.caption)
                     Text(intendedGame.startTime, formatter: dateFormatter)
                         .font(.caption2)
                 }

@@ -12,6 +12,6 @@ struct Club: Codable, Hashable {
     let name: String
     let member: [Player]
     let gameHistory: [GameByDay]
-    let intendedGame: [GameByDay] // 최대 5개까지 저장 가능하도록 구현 예정
-    let locations: [String]
+//    let intendedGame: [GameByDay] // 최대 5개까지 저장 가능하도록 구현 예정 -> 추후 개발 진행
+//    let locations: [String] // -> 추후 개발 진행
 }
