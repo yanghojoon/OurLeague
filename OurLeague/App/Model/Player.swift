@@ -9,8 +9,8 @@ import Foundation
 
 struct Player: Codable, Hashable {
     let name: String
-    let club: Club
-    let totalGameCount: Int
-    let winCount: Int
-    let ranking: Int
+    let club: [Club]
+//    let totalGameCount: Int
+//    let winCount: Int
+//    let ranking: Int
 }

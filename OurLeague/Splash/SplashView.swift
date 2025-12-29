@@ -22,7 +22,7 @@ struct SplashView: View {
                 .resizable()
                 .frame(width: 100, height: 100)
             if navigateToNextPage {
-                HomeView()
+                GameMakerView()
                     .transition(.opacity)
             }
         }

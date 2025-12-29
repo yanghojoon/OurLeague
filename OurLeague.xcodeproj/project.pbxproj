@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -24,7 +24,6 @@
 		DE7A186D2B28257B008E5CC3 /* OurLeagueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A186C2B28257B008E5CC3 /* OurLeagueUITests.swift */; };
 		DE7A186F2B28257B008E5CC3 /* OurLeagueUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A186E2B28257B008E5CC3 /* OurLeagueUITestsLaunchTests.swift */; };
 		DE7A18912B29E617008E5CC3 /* InformationInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18902B29E617008E5CC3 /* InformationInputView.swift */; };
-		DE7A18942B29F479008E5CC3 /* SearchClubModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7A18932B29F479008E5CC3 /* SearchClubModalView.swift */; };
 		DEE4EBF62EA0AEC3004B62D1 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = DEE4EBF52EA0AEC3004B62D1 /* Auth */; };
 		DEE4EBF82EA0AEC3004B62D1 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = DEE4EBF72EA0AEC3004B62D1 /* Functions */; };
 		DEE4EBFA2EA0AEC3004B62D1 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = DEE4EBF92EA0AEC3004B62D1 /* PostgREST */; };
@@ -69,8 +68,11 @@
 		DE7A186C2B28257B008E5CC3 /* OurLeagueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OurLeagueUITests.swift; sourceTree = "<group>"; };
 		DE7A186E2B28257B008E5CC3 /* OurLeagueUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OurLeagueUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		DE7A18902B29E617008E5CC3 /* InformationInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InformationInputView.swift; sourceTree = "<group>"; };
-		DE7A18932B29F479008E5CC3 /* SearchClubModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchClubModalView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		DE3791002F02AA9800044CAE /* GameMaker */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = GameMaker; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		DE7A18492B282579008E5CC3 /* Frameworks */ = {
@@ -158,6 +160,7 @@
 				DE7757F32D54D71600E2255D /* Club */,
 				DE7757F62D54D7C800E2255D /* GameRecord */,
 				DE7A18572B28257B008E5CC3 /* Preview Content */,
+				DE3791002F02AA9800044CAE /* GameMaker */,
 			);
 			path = OurLeague;
 			sourceTree = "<group>";
@@ -235,18 +238,9 @@
 		DE7A188F2B29E40C008E5CC3 /* MyInformation */ = {
 			isa = PBXGroup;
 			children = (
-				DE7A18922B29F469008E5CC3 /* SearchClub */,
 				DE7A18902B29E617008E5CC3 /* InformationInputView.swift */,
 			);
 			path = MyInformation;
-			sourceTree = "<group>";
-		};
-		DE7A18922B29F469008E5CC3 /* SearchClub */ = {
-			isa = PBXGroup;
-			children = (
-				DE7A18932B29F479008E5CC3 /* SearchClubModalView.swift */,
-			);
-			path = SearchClub;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -263,6 +257,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				DE3791002F02AA9800044CAE /* GameMaker */,
 			);
 			name = OurLeague;
 			packageProductDependencies = (
@@ -393,7 +390,6 @@
 				DE7A18912B29E617008E5CC3 /* InformationInputView.swift in Sources */,
 				DE2FFD2F2EA1CAEF00674784 /* Supabase.swift in Sources */,
 				DE7757FE2D54F4FB00E2255D /* CalendarView.swift in Sources */,
-				DE7A18942B29F479008E5CC3 /* SearchClubModalView.swift in Sources */,
 				DE7757F52D54D73700E2255D /* ClubInfoView.swift in Sources */,
 				DE7A18522B282579008E5CC3 /* HomeView.swift in Sources */,
 				DE7757F22D54CD3F00E2255D /* Player.swift in Sources */,
