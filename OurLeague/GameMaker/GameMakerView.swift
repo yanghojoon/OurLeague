@@ -86,6 +86,11 @@ extension GameMakerView {
                     .padding(.horizontal)
                     .padding(.top, 20)
                 
+                gameCountView()
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .shadow(color: .gray.opacity(0.4), radius: 5, x: 4, y: 4)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
                 // TODO: 게임 수, 선수 명단 등 다른 입력 UI를 여기에 추가합니다.
             }
             .scrollBounceBehavior(.basedOnSize, axes: .vertical)
@@ -165,7 +170,7 @@ extension GameMakerView {
                     Image(systemName: "sportscourt")
                         .font(.system(size: 12))
                         .frame(width: 25, height: 25)
-                        .foregroundStyle(Color(red: 0 / 255, green: 150 / 255, blue: 0 / 255))
+                        .foregroundStyle(Color(red: 20 / 255, green: 140 / 255, blue: 30 / 255))
                         .background(Color.green.opacity(0.2))
                         .clipShape(RoundedRectangle(cornerRadius: 4))
                         .padding(.leading, 20)
@@ -194,6 +199,45 @@ extension GameMakerView {
             }
         }
     }
+    
+    private func gameCountView() -> some View {
+        ZStack {
+            Color.white
+            VStack {
+                HStack {
+                    Image(systemName: "tennis.racket")
+                        .font(.system(size: 12))
+                        .frame(width: 25, height: 25)
+                        .foregroundStyle(Color(red: 20 / 255, green: 140 / 255, blue: 30 / 255))
+                        .background(Color.green.opacity(0.2))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .padding(.leading, 20)
+                        .padding(.top, 16)
+                    Text("게임 수")
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .padding(.top, 16)
+                    Spacer()
+                }
+
+                Spacer()
+                    .frame(height: 20)
+                Stepper {
+                    Text("\(gameCount)")
+                        .font(.headline)
+                } onIncrement: {
+                    gameCount += 1
+                } onDecrement: {
+                    if courtCount >= 2 {
+                        gameCount -= 1
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 16)
+            }
+        }
+    }
+
 }
 
 #Preview {
