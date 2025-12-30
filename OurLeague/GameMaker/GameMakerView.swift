@@ -99,6 +99,8 @@ extension GameMakerView {
                         .shadow(color: .gray.opacity(0.4), radius: 5, x: 4, y: 4)
                         .padding(.horizontal)
                         .padding(.top, 8)
+                    Spacer()
+                        .frame(height: 100)
                 }
                 .scrollBounceBehavior(.basedOnSize, axes: .vertical)
                 .padding(.bottom)
