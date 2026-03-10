@@ -26,6 +26,7 @@ platform :ios do
   # - Current Project Version: patch 번호와 동일
   # - sed로 pbxproj 직접 수정
   # - release/{새버전} 브랜치 생성 후 버전 변경 커밋
+  # - push origin 후 에디터로 PR body 작성 → GitHub PR 생성
   # ============================================================
   lane :bump_version do
     # Working tree 검증 (git 조작 전 필수)
@@ -86,6 +87,11 @@ platform :ios do
     sh("git commit -m 'chore: version #{new_marketing_version}'")
 
     UI.success("📝 Committed: chore: version #{new_marketing_version}")
+
+    # Remote에 브랜치 push
+    sh("git push origin #{release_branch}")
+    UI.success("🚀 Pushed branch: #{release_branch}")
+    UI.success("🎉 Done! Branch '#{release_branch}' pushed to origin.")
   end
 
 end
