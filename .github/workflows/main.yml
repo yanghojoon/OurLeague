@@ -3,7 +3,7 @@ name: Trigger Condition Test
 on:
   pull_request:
     branches:
-      - "master"
+      - "main"
     types:
       - labeled      # 레이블이 추가될 때
       - synchronize  # PR에 새로운 커밋이 푸시될 때
