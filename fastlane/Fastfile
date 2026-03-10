@@ -1,0 +1,91 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+skip_docs
+
+default_platform(:ios)
+
+platform :ios do
+
+  # ============================================================
+  # bump_version lane
+  # - main 브랜치에서만 실행 가능
+  # - Marketing Version 형식: {YY}.{주차}.{현재 patch+1}
+  # - Current Project Version: patch 번호와 동일
+  # - sed로 pbxproj 직접 수정
+  # - release/{새버전} 브랜치 생성 후 버전 변경 커밋
+  # ============================================================
+  lane :bump_version do
+    # Working tree 검증 (git 조작 전 필수)
+    ensure_git_status_clean(
+      show_uncommitted_changes: true,
+      ignore_files: [
+        "Pods/",              # CocoaPods 자동 생성 파일
+        "Package.resolved"    # SPM 자동 생성 파일
+      ]
+    )
+
+    # main 브랜치 여부 확인
+    current_branch = sh("git rev-parse --abbrev-ref HEAD").strip
+    unless current_branch == "main"
+      UI.user_error!("❌ bump_version은 main 브랜치에서만 실행할 수 있습니다. (현재 브랜치: #{current_branch})")
+    end
+
+    pbxproj = "../OurLeague.xcodeproj/project.pbxproj"
+
+    # 현재 CURRENT_PROJECT_VERSION 읽기 — Ruby로 직접 파싱 (sh() 출력 오염 방지)
+    pbxproj_content = File.read(pbxproj)
+    match = pbxproj_content.match(/CURRENT_PROJECT_VERSION = (\d+);/)
+    UI.user_error!("❌ CURRENT_PROJECT_VERSION을 찾을 수 없습니다.") unless match
+    current_build = match[1].to_i
+
+    # 새 버전 계산
+    new_build = current_build + 1
+
+    # 현재 날짜 기준 YY, 주차 계산 (%V: ISO 8601 주차, 1-based)
+    year_2digit = Time.now.strftime("%y")   # e.g. "26"
+    week_number = Time.now.strftime("%V")   # e.g. "10"
+
+    new_marketing_version = "#{year_2digit}.#{week_number}.#{new_build}"
+
+    UI.message("📦 Current CURRENT_PROJECT_VERSION: #{current_build}")
+    UI.message("🆙 New MARKETING_VERSION: #{new_marketing_version}")
+    UI.message("🔢 New CURRENT_PROJECT_VERSION: #{new_build}")
+
+    # release/{버전} 브랜치 생성
+    release_branch = "release/#{new_marketing_version}"
+    existing = sh("git branch --list #{release_branch}").strip
+    if existing.empty?
+      sh("git switch -c #{release_branch}")
+      UI.success("🌿 Created branch: #{release_branch}")
+    else
+      sh("git switch #{release_branch}")
+      UI.message("🌿 Switched to existing branch: #{release_branch}")
+    end
+
+    # sed로 pbxproj 직접 수정 (모든 occurrence)
+    sh("sed -i '' 's/CURRENT_PROJECT_VERSION = #{current_build};/CURRENT_PROJECT_VERSION = #{new_build};/g' #{pbxproj}")
+    sh("sed -i '' 's/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = #{new_marketing_version};/g' #{pbxproj}")
+
+    UI.success("✅ Version bumped to #{new_marketing_version} (build: #{new_build})")
+
+    # 변경된 project.pbxproj 커밋
+    sh("git add #{pbxproj}")
+    sh("git commit -m 'chore: version #{new_marketing_version}'")
+
+    UI.success("📝 Committed: chore: version #{new_marketing_version}")
+  end
+
+end
