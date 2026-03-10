@@ -1,0 +1,36 @@
+name: Trigger Condition Test
+
+on:
+  pull_request:
+    branches:
+      - "master"
+    types:
+      - labeled      # 레이블이 추가될 때
+      - synchronize  # PR에 새로운 커밋이 푸시될 때
+
+jobs:
+  check-trigger:
+    runs-on: ubuntu-latest
+    
+    # ✅ 핵심 조건문:
+    # 1. 'release-start' 레이블이 붙은 순간이거나
+    # 2. 이미 'release-start' 레이블이 붙어있는 상태에서 새로운 커밋(synchronize)이 올라온 경우
+    if: |
+      (github.event.action == 'labeled' && github.event.label.name == 'release-start') ||
+      (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'release-start'))
+
+    steps:
+      - name: Check Event Info
+        run: |
+          echo "🚀 트리거 성공!"
+          echo "현재 이벤트: ${{ github.event.action }}"
+          echo "PR 상태: ${{ github.event.pull_request.title }}"
+          echo "작성자: ${{ github.actor }}"
+
+      - name: Detailed Logic Simulation
+        run: |
+          if [ "${{ github.event.action }}" == "labeled" ]; then
+            echo "✅ 레이블 'release-start' 감지로 인한 빌드 시작"
+          else
+            echo "✅ 레이블이 있는 상태에서 새로운 커밋 푸시로 인한 재빌드 시작"
+          fi
