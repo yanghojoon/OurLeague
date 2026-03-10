@@ -1,0 +1,99 @@
+name: Create Release PR
+
+on:
+  create:
+    branches:
+      - 'release/**'
+
+jobs:
+  create-pull-request:
+    runs-on: ubuntu-latest
+    # release 브랜치 생성 시에만 실행
+    if: startsWith(github.ref, 'refs/heads/release/')
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract Branch Info
+        id: branch_info
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+
+          # release/ 이후의 버전 정보 추출
+          # 예: release/26.11.165 -> 26.11.165
+          VERSION="${BRANCH_NAME#release/}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Get Commit Messages
+        id: commit_messages
+        run: |
+          # main 브랜치와 현재 브랜치의 차이에 있는 커밋 메시지 추출
+          git fetch origin main
+
+          COMMITS=$(git log origin/main..HEAD --pretty=format:"- %s" --no-merges)
+
+          if [ -z "$COMMITS" ]; then
+            COMMITS="- 변경사항 없음"
+          fi
+
+          # 멀티라인 output 처리
+          {
+            echo "commits<<EOF"
+            echo "$COMMITS"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request Body
+        id: pr_body
+        run: |
+          VERSION="${{ steps.branch_info.outputs.version }}"
+          COMMITS="${{ steps.commit_messages.outputs.commits }}"
+
+          BODY="# 변경사항 요약
+          version ${VERSION} 배포
+
+          # 변경사항 설명
+          ${COMMITS}
+
+          # 변경 타입
+          Release"
+
+          {
+            echo "body<<EOF"
+            echo "$BODY"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = "${{ steps.branch_info.outputs.version }}";
+            const branchName = "${{ steps.branch_info.outputs.branch_name }}";
+            const body = `${{ steps.pr_body.outputs.body }}`;
+
+            try {
+              const response = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[Release] version ${version} 배포`,
+                head: branchName,
+                base: "main",
+                body: body,
+              });
+
+              console.log(`PR created: ${response.data.html_url}`);
+
+            } catch (error) {
+              console.error("PR 생성 실패:", error.message);
+              core.setFailed(error.message);
+            }
