@@ -1,0 +1,322 @@
+<!doctype html>
+<!--
+  database-visual-guide.html
+  OurLeague
+
+  Created by 양호준 on 2026-10-25.
+-->
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>OurLeague · 한눈에 보는 데이터 설계</title>
+  <style>
+    :root { --paper:#f6f5ef; --surface:#fff; --ink:#203b31; --muted:#60726a; --line:#dce2d9; --green:#164f3d; --lime:#d4ee86; --soft:#edf3e7; --amber:#89521e; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; scroll-padding-top:84px; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; line-height:1.7; word-break:keep-all; }
+    a { color:var(--green); text-underline-offset:4px; }
+    button { font:inherit; cursor:pointer; }
+    button:focus-visible,a:focus-visible,summary:focus-visible,.diagram-scroll:focus-visible { outline:3px solid #779b36; outline-offset:4px; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.85em; overflow-wrap:anywhere; }
+    .wrap { max-width:1280px; margin:auto; padding:0 32px; }
+    header { border-bottom:1px solid var(--line); }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:18px; padding-top:22px; padding-bottom:22px; }
+    .brand { font-weight:800; font-size:21px; letter-spacing:-.7px; }
+    .brand span { display:inline-block; width:15px; height:15px; background:var(--green); border-radius:50%; margin-right:9px; box-shadow:inset 0 0 0 4px var(--lime); }
+    .meta { color:var(--muted); font-size:12px; }
+    .hero { padding:52px 0 32px; display:grid; grid-template-columns:1.4fr 1fr; gap:40px; align-items:end; }
+    .eyebrow { font-size:11px; font-weight:800; letter-spacing:2px; color:var(--green); }
+    h1 { font-size:clamp(32px,4vw,52px); line-height:1.2; letter-spacing:-2px; margin:13px 0 20px; }
+    .lead { color:var(--muted); max-width:640px; margin:0; }
+    .summary { border-left:3px solid var(--green); padding:5px 0 5px 23px; }
+    .summary p { margin:0 0 10px; font-size:14px; }
+    .summary p:last-child { margin:0; }
+    .summary strong { color:var(--green); }
+    .notice { padding:15px 20px; background:#eeeedf; border:1px solid #d9ddcb; border-radius:10px; font-size:13px; }
+    nav { display:flex; gap:25px; padding:19px 0; position:sticky; top:0; z-index:5; background:var(--paper); border-bottom:1px solid var(--line); flex-wrap:wrap; }
+    nav a { font-size:13px; text-decoration:none; font-weight:700; }
+    nav a:hover { text-decoration:underline; }
+    section { padding-top:46px; }
+    .section-head { display:flex; gap:17px; margin-bottom:22px; align-items:baseline; }
+    .number { font-size:12px; color:var(--green); border-top:2px solid var(--green); padding-top:8px; }
+    h2 { font-size:27px; line-height:1.35; letter-spacing:-1px; margin:0 0 7px; }
+    .section-head p { margin:0; color:var(--muted); font-size:14px; }
+    h3 { margin:0 0 10px; font-size:19px; }
+    .map-layout { display:grid; grid-template-columns:minmax(0,1fr) 300px; border:1px solid var(--line); border-radius:16px; background:var(--surface); overflow:hidden; }
+    .diagram-scroll { overflow:auto; padding:24px; }
+    .board { position:relative; min-width:650px; height:664px; }
+    .board svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+    .edge { fill:none; stroke:var(--green); stroke-width:2; }
+    .edge-label { font-size:11px; font-weight:700; fill:var(--green); paint-order:stroke; stroke:#fff; stroke-width:5px; stroke-linejoin:round; }
+    .node { position:absolute; width:28%; height:112px; padding:15px; text-align:left; background:#f9faf6; border:1px solid #cbd5c9; border-radius:10px; color:var(--ink); transition:background .18s,border-color .18s; }
+    .node:hover { background:var(--soft); border-color:var(--green); }
+    .node[aria-pressed="true"] { background:var(--green); border-color:var(--green); color:white; }
+    .node.related { border:2px solid var(--green); background:var(--soft); }
+    .node .table-name { display:block; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px; margin-bottom:7px; overflow-wrap:anywhere; }
+    .node strong { display:block; font-size:16px; }
+    .node small { font-size:11px; opacity:.85; }
+    .inspector { background:var(--soft); border-left:1px solid var(--line); padding:25px; }
+    .inspector .eyebrow { margin-bottom:15px; }
+    .inspector h3 { font-size:24px; margin:4px 0 14px; }
+    .inspector p { font-size:14px; }
+    .inspector h4 { font-size:12px; margin:24px 0 8px; color:var(--muted); }
+    .inspector ul { padding-left:18px; font-size:13px; }
+    .inspector li { margin:7px 0; }
+    .tip { color:var(--muted); font-size:12px; margin:12px 0; }
+    .relation { border-top:1px solid #ccd8c5; margin-top:22px; padding-top:16px; }
+    .relation p { margin:8px 0; font-size:12px; }
+    .legend { display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-bottom:15px; }
+    .legend span::before { content:""; display:inline-block; width:9px; height:9px; margin-right:7px; background:var(--green); border-radius:2px; }
+    .legend span:nth-child(2)::before { background:var(--soft); border:1px solid var(--green); }
+    .stats-strip { display:flex; gap:20px; align-items:center; background:var(--green); color:white; padding:22px 25px; border-radius:12px; margin-top:16px; }
+    .stats-strip strong { color:var(--lime); white-space:nowrap; }
+    .stats-strip p { margin:0; font-size:13px; }
+    .example-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:26px; }
+    .example { border-top:2px solid var(--green); padding-top:18px; }
+    .example .index { color:var(--muted); font-size:12px; }
+    .example h3 { margin:8px 0; }
+    .example p { color:var(--muted); font-size:14px; }
+    .record { background:white; border:1px solid var(--line); border-radius:10px; padding:15px; margin-top:14px; font-size:13px; }
+    .record strong { display:block; margin-bottom:6px; }
+    .record code { color:var(--green); }
+    .callout { background:var(--soft); border-left:3px solid var(--green); padding:17px 21px; margin-top:23px; font-size:14px; }
+    .match-demo { display:grid; grid-template-columns:1fr 1fr; gap:30px; background:white; border:1px solid var(--line); border-radius:16px; padding:28px; }
+    .court { background:var(--green); border:8px solid var(--green); outline:1px solid #588273; outline-offset:-15px; position:relative; min-height:270px; display:grid; grid-template-rows:1fr 1fr; color:white; }
+    .court::after { content:""; position:absolute; left:7px; right:7px; top:50%; border-top:2px dashed #c6d8c8; }
+    .team { display:flex; justify-content:space-around; align-items:center; gap:8px; padding:23px; }
+    .player { text-align:center; font-size:17px; font-weight:700; }
+    .player small { display:block; color:#d2e6cf; font-size:11px; font-weight:400; }
+    .control-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:18px; }
+    .action { border:1px solid var(--green); background:white; color:var(--green); border-radius:8px; padding:9px 13px; font-size:13px; font-weight:700; }
+    .action[aria-pressed="true"] { background:var(--green); color:white; }
+    .demo-state { min-height:42px; margin-top:16px; font-size:14px; }
+    .table-scroll { overflow:auto; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th,td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+    th { color:var(--muted); font-weight:500; }
+    .audit { margin-top:15px; background:var(--soft); padding:12px; font-size:12px; border-radius:8px; }
+    .security-grid { display:grid; grid-template-columns:1fr 1fr; gap:32px; }
+    .private-list { border:1px solid var(--line); border-radius:12px; background:white; }
+    .private-list article { padding:17px 20px; }
+    .private-list article+article { border-top:1px solid var(--line); }
+    .private-list p { margin:5px 0 0; color:var(--muted); font-size:13px; }
+    .access-flow { padding:6px 0 0; }
+    .flow-line { padding:17px 0; border-bottom:1px solid var(--line); }
+    .flow-line strong { font-size:14px; }
+    .flow-line p { font-size:13px; color:var(--muted); margin:5px 0 0; }
+    details { border-top:1px solid var(--line); padding:18px 0; }
+    summary { cursor:pointer; font-weight:700; }
+    details p { font-size:14px; color:var(--muted); max-width:850px; }
+    footer { margin-top:40px; padding:24px 0 38px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .print-button { border:0; background:none; padding:0; color:var(--green); text-decoration:underline; text-underline-offset:4px; }
+    .no-script { padding:16px; color:var(--amber); }
+    @media(max-width:1050px) { .map-layout { grid-template-columns:1fr; } .inspector { border-left:0; border-top:1px solid var(--line); } .board { min-width:650px; } }
+    @media(max-width:700px) { .wrap { padding-left:18px; padding-right:18px; } .hero,.example-grid,.match-demo,.security-grid { grid-template-columns:1fr; } .hero { padding-top:32px; gap:23px; } nav { gap:15px; } nav a { font-size:12px; } .topbar { align-items:start; } .meta { max-width:145px; text-align:right; } .diagram-scroll { padding:18px; } .stats-strip { align-items:start; flex-direction:column; gap:9px; } .match-demo { padding:18px; } .section-head { gap:12px; } h2 { font-size:23px; } }
+    @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } * { transition:none !important; } }
+    @media print { nav,.control-row,.print-button { display:none; } body { background:white; font-size:12px; } .wrap { max-width:none; padding:0; } .hero { padding-top:15px; } section { break-inside:avoid; padding-top:25px; } .map-layout { display:block; } .diagram-scroll { overflow:visible; } .board { min-width:0; } .node { padding:8px; } .node strong { font-size:13px; } .node .table-name { font-size:9px; } .inspector { border:0; } .match-demo { grid-template-columns:1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <header><div class="wrap topbar"><div class="brand"><span aria-hidden="true"></span>OurLeague</div><div class="meta">DATABASE FIELD GUIDE<br>PRD v0.3 · 설계 설명서</div></div></header>
+  <main class="wrap">
+    <div class="hero">
+      <div><div class="eyebrow">사람 → 모임 → 경기 → 기록</div><h1>우리 클럽의 기록은<br>어떻게 연결될까?</h1><p class="lead">테이블 이름보다 역할부터 이해하세요. ‘민수가 모임에 참석해 복식 경기를 한다’는 일상을 데이터로 나눈 구조입니다.</p></div>
+      <div class="summary"><p><strong>11개</strong>의 공개 스키마 테이블에 운영 기록을 저장합니다.</p><p><strong>3개</strong>의 내부 테이블로 초대·게스트·재시도를 관리합니다.</p><p><strong>1개</strong>의 전적 뷰가 유효한 경기 결과를 계산합니다.</p><p class="meta">Supabase 기본 인증 테이블 auth.users는 별도입니다.</p></div>
+    </div>
+    <div class="notice"><strong>테스트 데이터와 설계는 별개입니다.</strong> 기존 데이터는 사용자가 임의로 넣은 테스트 자료입니다. 이 페이지의 인물·ID·경기 역시 설명용이며 실제 DB를 조회하거나 변경하지 않습니다. 테스트 자료 보존이 서비스 요구사항이라는 뜻은 아닙니다.</div>
+    <nav aria-label="문서 목차"><a href="#relationships">01 테이블 관계도</a><a href="#people">02 한 사람, 세 가지 기록</a><a href="#results">03 경기와 전적</a><a href="#security">04 권한과 내부 관리</a><a href="#decisions">05 설계 이유</a></nav>
+
+    <section id="relationships">
+      <div class="section-head"><span class="number">01</span><div><h2>테이블을 눌러 연결을 따라가세요</h2><p>선택한 테이블의 직접 연결만 표시합니다. 선은 참조 관계이며, 화살표 방향은 읽는 순서입니다.</p></div></div>
+      <div class="legend"><span>선택한 테이블</span><span>직접 연결된 테이블</span><span>1 → N : 하나에 여러 개가 연결</span></div>
+      <div class="map-layout">
+        <div class="diagram-scroll" tabindex="0" role="region" aria-label="테이블 관계도. 좁은 화면에서는 좌우로 스크롤하세요.">
+          <div class="board" id="board">
+            <svg id="connections" aria-hidden="true"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#164f3d"/></marker></defs><g id="edges"></g></svg>
+            <button class="node" data-table="auth.users" style="left:0;top:0" aria-pressed="false"><span class="table-name">auth.users</span><strong>로그인 계정</strong><small>Supabase 기본 인증</small></button>
+            <button class="node" data-table="memberships" style="left:36%;top:0" aria-pressed="false"><span class="table-name">memberships</span><strong>클럽 가입·권한</strong><small>어느 클럽의 회원인가?</small></button>
+            <button class="node" data-table="clubs" style="left:72%;top:0" aria-pressed="true"><span class="table-name">clubs</span><strong>클럽</strong><small>모임과 명단의 기준</small></button>
+            <button class="node" data-table="profiles" style="left:0;top:180px" aria-pressed="false"><span class="table-name">profiles</span><strong>내 프로필</strong><small>계정의 표시 이름</small></button>
+            <button class="node" data-table="club_participants" style="left:36%;top:180px" aria-pressed="false"><span class="table-name">club_participants</span><strong>클럽 참가자 명단</strong><small>계정 없이도 존재</small></button>
+            <button class="node" data-table="sessions" style="left:72%;top:180px" aria-pressed="false"><span class="table-name">sessions</span><strong>운동 모임</strong><small>토요일 오후 테니스</small></button>
+            <button class="node" data-table="session_participants" style="left:0;top:360px" aria-pressed="false"><span class="table-name">session_participants</span><strong>이번 모임 참석자</strong><small>참석 응답 + 승인</small></button>
+            <button class="node" data-table="matches" style="left:36%;top:360px" aria-pressed="false"><span class="table-name">matches</span><strong>복식 경기</strong><small>라운드·코트·진행 상태</small></button>
+            <button class="node" data-table="session_courts" style="left:72%;top:360px" aria-pressed="false"><span class="table-name">session_courts</span><strong>이번 모임 코트</strong><small>1번 코트, 2번 코트</small></button>
+            <button class="node" data-table="match_players" style="left:0;top:540px" aria-pressed="false"><span class="table-name">match_players</span><strong>경기별 선수 배치</strong><small>A팀 2명 + B팀 2명</small></button>
+            <button class="node" data-table="results" style="left:36%;top:540px" aria-pressed="false"><span class="table-name">results</span><strong>현재 경기 결과</strong><small>승리 팀·선택적 점수</small></button>
+            <button class="node" data-table="result_revisions" style="left:72%;top:540px" aria-pressed="false"><span class="table-name">result_revisions</span><strong>결과 변경 이력</strong><small>변경 전후·사유·작업자</small></button>
+          </div>
+        </div>
+        <aside class="inspector" id="inspector" aria-live="polite" aria-atomic="true"><div class="eyebrow">선택한 테이블</div><code>clubs</code><h3>클럽</h3><p>모임과 참가자 명단을 묶는 공간입니다. 회원 권한도 클럽 단위로 구분됩니다.</p><h4>주요 필드</h4><ul><li>id · 클럽 식별자</li><li>name · 클럽 이름</li><li>owner_account_id · 운영자 계정</li><li>status · 운영 상태</li></ul><p>클럽 하나에 여러 회원·참가자·모임이 연결됩니다.</p></aside>
+      </div>
+      <p class="tip">선택된 테이블은 Tab 키와 Enter/Space로도 바꿀 수 있습니다. ID는 사람 이름이 아니라 서로를 연결하는 고유 번호입니다. 상세 패널에는 그림에서 생략된 선택적 계정 연결도 표시합니다.</p>
+      <div class="stats-strip"><strong>participant_stats</strong><p>클럽 참가자 + 모임 참석 + 경기별 선수 + 완료 경기 + 유효 결과 → 승·패·승률<br>별도 집계 테이블이 아닌 <b>조회용 뷰</b>입니다. 이름이 같다는 이유만으로 기록을 합치지 않습니다.</p></div>
+      <noscript><p class="no-script">자바스크립트를 켜면 관계도 선택과 전적 예시를 사용할 수 있습니다. 아래의 설명과 설계 요약은 그대로 읽을 수 있습니다.</p></noscript>
+    </section>
+
+    <section id="people">
+      <div class="section-head"><span class="number">02</span><div><h2>‘민수’인데 왜 테이블이 세 개일까요?</h2><p>같은 사람이라도 로그인, 클럽 기록, 모임 참석의 수명이 다르기 때문입니다.</p></div></div>
+      <div class="example-grid">
+        <article class="example"><span class="index">로그인하는 나</span><h3>계정</h3><code>auth.users / profiles</code><p>앱에 로그인할 때 사용하는 신원입니다. 여러 클럽을 이용해도 계정은 같습니다.</p><div class="record"><strong>민수의 계정</strong><code>account_id = U1</code><br>표시 이름: 민수</div></article>
+        <article class="example"><span class="index">우리 클럽의 선수</span><h3>클럽 참가자</h3><code>club_participants</code><p>우리 클럽의 누적 전적을 쌓는 대상입니다. 앱에 가입하지 않아도 등록할 수 있습니다.</p><div class="record"><strong>A클럽의 민수</strong><code>participant_id = P1</code><br><code>account_id = U1</code> 또는 미연결</div></article>
+        <article class="example"><span class="index">오늘 운동에 오는 나</span><h3>모임 참석자</h3><code>session_participants</code><p>토요일과 일요일의 참석 신청은 각각 별도 기록입니다. 경기에는 이 참석자 ID를 사용합니다.</p><div class="record"><strong>토요일에 참석한 민수</strong><code>attendance_id = S1</code><br><code>club_participant_id = P1</code><br>참석: attending / 승인: approved</div></article>
+      </div>
+      <p class="tip">U1·P1·S1은 이해를 돕는 가상 ID입니다. attendance_id는 이 예시의 별칭이며 실제 컬럼명은 session_participants.id입니다. 실제 새 레코드는 UUID를 사용합니다.</p>
+      <div class="callout"><strong>게스트라면?</strong> 계정과 클럽 참가자 연결 없이 ‘이번 모임 참석자’만 만들 수 있습니다. 나중에 운영자가 클럽 참가자와 명시적으로 연결하면 그 참가자의 누적 전적에 포함됩니다. <strong>가입 권한은 별도로 memberships가 관리</strong>합니다.</div>
+    </section>
+
+    <section id="results">
+      <div class="section-head"><span class="number">03</span><div><h2>복식 한 경기가 전적이 되기까지</h2><p>버튼을 눌러 결과 저장·정정·무효화의 차이를 확인하세요. 아래 전적은 이 예시 경기 한 건만 계산합니다.</p></div></div>
+      <div class="match-demo">
+        <div><h3>1라운드 · 1번 코트</h3><p class="tip">matches 1행 + match_players 4행</p><div class="court" role="img" aria-label="A팀 민수·지수, B팀 영희·철수의 복식 경기"><div class="team"><div class="player">민수<small>A팀 · 자리 1</small></div><div class="player">지수<small>A팀 · 자리 2</small></div></div><div class="team"><div class="player">영희<small>B팀 · 자리 1</small></div><div class="player">철수<small>B팀 · 자리 2</small></div></div></div><p class="tip">같은 사람의 중복 출전, 다른 모임 선수 연결, 팀별 인원 오류를 DB에서 검사합니다.</p></div>
+        <div><h3>결과는 하나, 변경 이력은 별도</h3><p class="tip">결과 정정 시 승패를 추가로 더하지 않습니다. 현재 유효한 결과를 다시 조회해 계산합니다.</p><div class="control-row" role="group" aria-label="결과 시나리오 선택"><button class="action" data-scenario="pending" aria-pressed="true">결과 없음</button><button class="action" data-scenario="saved" aria-pressed="false">A팀 승리 저장</button><button class="action" data-scenario="corrected" aria-pressed="false">B팀 승리로 정정</button><button class="action" data-scenario="invalidated" aria-pressed="false">결과 무효화</button></div><div id="demo-output" aria-live="polite" aria-atomic="true"><p class="demo-state">아직 결과가 없습니다. 승패에 반영하지 않습니다.</p><div class="table-scroll"><table><caption class="tip">이 경기의 전적 반영 예시</caption><thead><tr><th scope="col">참가자</th><th scope="col">승</th><th scope="col">패</th><th scope="col">승률</th></tr></thead><tbody id="stat-rows"><tr><td>민수</td><td>0</td><td>0</td><td>—</td></tr><tr><td>지수</td><td>0</td><td>0</td><td>—</td></tr><tr><td>영희</td><td>0</td><td>0</td><td>—</td></tr><tr><td>철수</td><td>0</td><td>0</td><td>—</td></tr></tbody></table></div><div class="audit" id="audit-output">result_revisions: 변경 이력 없음</div></div></div>
+      </div>
+      <div class="callout"><strong>‘출전’과 ‘승패’는 다릅니다.</strong> 진행·완료·중단 경기는 출전 수에 포함되지만, 승패는 유효한 결과가 있는 완료 경기만 계산합니다. 완료 경기가 0이면 승률은 0%가 아니라 값 없음(NULL)입니다.</div>
+    </section>
+
+    <section id="security">
+      <div class="section-head"><span class="number">04</span><div><h2>보이는 기록과 내부 관리 데이터를 분리합니다</h2><p>public 스키마라는 이름이 ‘누구나 볼 수 있음’을 뜻하지는 않습니다.</p></div></div>
+      <div class="security-grid">
+        <div class="private-list"><article><code>private.invitations</code><p>회원 초대·모임 모집 링크의 만료와 폐기를 관리합니다. 토큰 원문 대신 해시를 저장합니다.</p></article><article><code>private.guest_sessions</code><p>개별 게스트 브라우저의 접근 권한입니다. 모집 링크와 분리되어 이미 승인된 게스트 권한을 별도로 유지·폐기합니다.</p></article><article><code>private.command_receipts</code><p>같은 요청이 다시 오면 기존 응답을 반환합니다. 저장 버튼 연타나 네트워크 재시도로 중복 처리되는 것을 방지합니다.</p></article></div>
+        <div class="access-flow"><div class="flow-line"><strong>회원 조회 → 클럽별 RLS 검사 → 허용된 행만</strong><p>승인된 소속을 기준으로 조회합니다. 프로필·가입 내역·결과 변경 이력에는 별도 제한이 적용됩니다.</p></div><div class="flow-line"><strong>변경 요청 → RPC → 권한·상태 검사 → 함께 저장</strong><p>일반 앱 계정의 직접 INSERT/UPDATE/DELETE는 차단합니다. 승인·경기 시작·결과 변경은 트랜잭션과 잠금으로 처리합니다.</p></div><div class="flow-line"><strong>게스트 → 제한된 전용 RPC → 해당 모임 정보만</strong><p>승인 전에는 안내와 자기 상태만, 승인 후에는 해당 모임의 허용된 이름·대진·결과를 제공합니다. 다른 클럽과 계정 ID는 노출하지 않습니다.</p></div></div>
+      </div>
+    </section>
+
+    <section id="decisions">
+      <div class="section-head"><span class="number">05</span><div><h2>이렇게 나눈 이유</h2><p>복잡해 보이는 분리는 실제 운영에서 서로 다른 것을 섞지 않기 위한 장치입니다.</p></div></div>
+      <details open><summary>이름 대신 ID로 연결하는 이유</summary><p>동명이인과 닉네임 변경 때문에 이름을 식별자로 쓰면 다른 사람의 전적이 합쳐질 수 있습니다. ID로 연결하고, 이름은 표시용 값으로 취급합니다. 모임 참석자에는 당시 표시 이름도 저장합니다.</p></details>
+      <details open><summary>참석자가 바뀌면 기존 대진은 어떻게 되나요?</summary><p>명단 버전(roster_version)을 올리고 대진을 재확인해야 한다고 표시합니다. 대진 확정 시 명단·대진 버전을 검사하므로 오래된 화면의 대진을 그대로 확정할 수 없습니다. 이미 시작된 경기의 선수 구성은 바꾸지 않습니다.</p></details>
+      <details><summary>왜 선수 배열 대신 match_players를 두었나요?</summary><p>경기마다 A팀 1·2번, B팀 1·2번을 각각 한 행으로 저장하면 참가자 외래 키, 중복 출전 방지, 팀별 두 명 검증을 DB에서 적용할 수 있습니다. 참가자별 출전과 전적 조회에도 같은 연결을 사용합니다.</p></details>
+      <details><summary>테스트 데이터도 계속 보존해야 하나요?</summary><p>아닙니다. 이전 이관은 사용자 데이터의 성격을 확정하지 못한 상태에서 삭제를 피한 조치였습니다. needs_owner·needs_review와 legacy_* 필드는 기존 자료 이관용이며 신규 운영 데이터의 정상 흐름이 아닙니다. 이 문서는 테스트 데이터를 초기화하지 않으며, 초기화 범위와 방법은 별도 작업입니다.</p></details>
+      <details><summary>이 페이지가 실제 DB 상태를 보여주나요?</summary><p>아닙니다. 저장소의 마이그레이션과 설계 문서를 바탕으로 만든 독립형 설명 페이지입니다. 실시간 DB 연결·로그인·데이터 저장 기능은 없고, 경기 시연도 브라우저 안의 예시입니다. 스키마 구현과 앱 전체 연동 완료는 구분해야 합니다.</p></details>
+    </section>
+    <footer><span>OurLeague · 데이터 모델 안내 · 2026-10-25</span><span><a href="OurLeague-MVP-PRD-v0.3.html">HTML PRD</a> · <a href="database.md">상세 설계 문서</a> · <button class="print-button" id="print-button">인쇄 / PDF 저장</button></span></footer>
+  </main>
+  <script>
+    const tables = {
+      'auth.users': { title:'로그인 계정', description:'Supabase가 관리하는 인증 신원입니다. 경기 선수 자체가 아니라 로그인할 수 있는 계정입니다.', fields:['id · 인증 계정 UUID'], rule:'한 계정이 여러 클럽에 가입할 수 있습니다. 계정 없이 참가자·게스트 기록만 존재할 수도 있습니다.' },
+      profiles: { title:'내 프로필', description:'계정의 표시 이름을 보관합니다. 클럽 참가자 기록과는 별개입니다.', fields:['id · auth.users.id와 같은 값','display_name · 표시 이름'], rule:'계정당 프로필은 최대 하나이며, 자신의 프로필만 조회합니다.' },
+      clubs: { title:'클럽', description:'모임과 참가자 명단을 묶는 공간입니다. 회원 권한도 클럽 단위로 구분됩니다.', fields:['id · 클럽 식별자','name · 클럽 이름','owner_account_id · 운영자 계정','status · 운영 상태'], rule:'활성 클럽은 운영자 1명이 필요합니다. 운영자 계정과 승인된 운영자 가입 관계가 일치해야 합니다.' },
+      memberships: { title:'클럽 가입·권한', description:'어떤 계정이 어느 클럽에서 어떤 권한을 갖는지 관리합니다. 스포츠 기록의 선수 명단과는 다릅니다.', fields:['club_id · 클럽','account_id · 로그인 계정','role · owner / member','status · pending / approved / inactive'], rule:'같은 클럽과 계정의 조합은 하나뿐입니다. A클럽 운영자가 B클럽에서도 운영자인 것은 아닙니다.' },
+      club_participants: { title:'클럽 참가자 명단', description:'클럽에서 경기 기록을 쌓는 안정적인 선수 ID입니다. 계정이 없는 사람도 명단에 등록할 수 있습니다.', fields:['id · 참가자 UUID','club_id · 소속 클럽','account_id · 선택적 계정 연결','display_name / label / is_active'], rule:'이름 중복은 허용합니다. 같은 클럽의 같은 계정에 활성 참가자 여러 명을 연결하지 않습니다.' },
+      sessions: { title:'운동 모임', description:'특정 날짜에 열리는 운동 일정입니다. 참석·코트·경기는 모두 이 모임에 속합니다.', fields:['club_id · 소속 클럽','starts_at / ends_at · 일시','capacity · 정원 4~32','court_count · 1~4 / round_count · 1~12','roster_version / schedule_version'], rule:'마감 ≤ 시작 < 종료를 검사합니다. 참석 명단이 바뀌면 이전 대진의 재확인이 필요합니다.' },
+      session_courts: { title:'이번 모임 코트', description:'이 모임에서 사용하는 코트입니다. 클럽 전체의 공통 코트 자산이 아니라 모임별 구성입니다.', fields:['id / session_id · 코트와 모임','name · 코트 이름','position · 1~4','is_active · 사용 여부'], rule:'같은 모임에서 코트 순서는 중복되지 않습니다. 코트를 비활성화해도 과거 경기의 코트 연결은 보존합니다.' },
+      session_participants: { title:'이번 모임 참석자', description:'특정 모임에 대한 참석 응답과 승인을 저장합니다. 같은 사람도 모임마다 별도 참석 기록을 가집니다.', fields:['session_id · 대상 모임','club_participant_id · 선택적 명단 연결','account_id · 선택적 계정 연결','display_name · 당시 표시 이름','response / approval · 응답과 승인'], rule:'계정·명단 연결이 모두 없는 게스트도 가능합니다. 승인된 참석자는 정원을 넘을 수 없습니다.' },
+      matches: { title:'복식 경기', description:'한 모임의 특정 라운드·코트에서 열리는 경기입니다. 선수 배치는 match_players에 따로 저장합니다.', fields:['session_id / court_id · 모임과 코트','round_index · 라운드','status · 대기·진행·완료·중단·취소','schedule_version · 대진 버전'], rule:'코트와 선수는 같은 모임에 속해야 합니다. 같은 코트에서 두 경기를 동시에 진행할 수 없습니다.' },
+      match_players: { title:'경기별 선수 배치', description:'한 경기에서 누가 어느 팀의 어느 자리에 출전하는지 나타냅니다. 복식 한 경기당 네 행입니다.', fields:['match_id / session_id · 경기와 모임','participant_id · 모임 참석자 ID','team · a / b','slot · 1 / 2'], rule:'서로 다른 네 명, 팀별 두 명을 검사합니다. 같은 라운드 중복 배치와 진행 중 경기의 선수 충돌도 차단합니다.' },
+      results: { title:'현재 경기 결과', description:'이 경기의 현재 유효한 승패를 저장합니다. 정정할 때 새 승패를 누적해서 더하는 구조가 아닙니다.', fields:['match_id · 경기당 최대 한 결과','winner · a / b','score_a / score_b · 선택 점수','version / is_valid · 버전과 유효 여부'], rule:'점수는 둘 다 없거나 둘 다 있어야 합니다. 입력한 점수의 우열과 승리 팀은 일치해야 합니다.' },
+      result_revisions: { title:'결과 변경 이력', description:'최초 저장·정정·무효화 과정을 추적합니다. 현재 결과와 변경 이력을 분리합니다.', fields:['match_id · 대상 경기','old_result / new_result · 변경 전후','reason · 변경 사유','actor_account_id / created_at'], rule:'전적은 변경 이력을 합산하지 않고 현재 유효한 경기 결과로 계산합니다. 이력 조회는 운영자로 제한합니다.' }
+    };
+    const relations = [
+      ['auth.users','profiles','1 → 0~1 · 프로필'],
+      ['auth.users','memberships','1 → N · 클럽별 가입'],
+      ['auth.users','clubs','1 → N · 운영 클럽'],
+      ['auth.users','club_participants','1 → N · 선택적 계정 연결'],
+      ['auth.users','session_participants','1 → N · 선택적 계정 연결'],
+      ['auth.users','result_revisions','1 → N · 선택적 작업자 연결'],
+      ['clubs','memberships','1 → N · 회원 권한'],
+      ['clubs','club_participants','1 → N · 참가자 명단'],
+      ['clubs','sessions','1 → N · 운동 모임'],
+      ['club_participants','session_participants','1 → N · 선택적 명단 연결'],
+      ['sessions','session_participants','1 → N · 참석 신청'],
+      ['sessions','session_courts','1 → N · 코트'],
+      ['sessions','matches','1 → N · 경기'],
+      ['session_courts','matches','1 → N · 코트 배정'],
+      ['session_participants','match_players','1 → N · 출전 배치'],
+      ['matches','match_players','1 → 4 · 복식 선수'],
+      ['matches','results','1 → 0~1 · 현재 결과'],
+      ['matches','result_revisions','1 → N · 변경 이력']
+    ];
+    const board = document.getElementById('board');
+    const nodes = [...document.querySelectorAll('.node')];
+    let selectedTable = 'clubs';
+    function element(tag, text, className) {
+      const result = document.createElement(tag);
+      result.textContent = text;
+      if (className) result.className = className;
+      return result;
+    }
+    function drawConnections() {
+      const edges = document.getElementById('edges');
+      edges.replaceChildren();
+      const boardRect = board.getBoundingClientRect();
+      const visibleRelations = relations.filter(relation => relation.includes(selectedTable)).filter(relation => !relation[2].includes('계정 연결') && !relation[2].includes('작업자 연결') && !(relation[0] === 'auth.users' && relation[1] === 'clubs'));
+      visibleRelations.forEach(([from, to, label]) => {
+        const start = nodes.find(node => node.dataset.table === from).getBoundingClientRect();
+        const end = nodes.find(node => node.dataset.table === to).getBoundingClientRect();
+        let startX = start.left + start.width / 2 - boardRect.left;
+        let startY = start.top + start.height / 2 - boardRect.top;
+        let endX = end.left + end.width / 2 - boardRect.left;
+        let endY = end.top + end.height / 2 - boardRect.top;
+        if (Math.abs(startY - endY) < 10) {
+          const direction = Math.sign(endX - startX);
+          startX += direction * start.width / 2;
+          endX -= direction * end.width / 2;
+        } else {
+          const direction = Math.sign(endY - startY);
+          startY += direction * start.height / 2;
+          endY -= direction * end.height / 2;
+        }
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${startX} ${startY} L ${endX} ${endY}`);
+        path.setAttribute('class', 'edge');
+        path.setAttribute('marker-end', 'url(#arrow)');
+        edges.append(path);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', (startX + endX) / 2);
+        text.setAttribute('y', (startY + endY) / 2 - 8);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('class', 'edge-label');
+        text.textContent = label.split(' · ')[0];
+        edges.append(text);
+      });
+    }
+    function selectTable(name) {
+      selectedTable = name;
+      const connected = relations.filter(relation => relation[0] === name || relation[1] === name);
+      nodes.forEach(node => {
+        node.setAttribute('aria-pressed', String(node.dataset.table === name));
+        node.classList.toggle('related', node.dataset.table !== name && connected.some(relation => relation[0] === node.dataset.table || relation[1] === node.dataset.table));
+      });
+      const data = tables[name];
+      const inspector = document.getElementById('inspector');
+      const fields = document.createElement('ul');
+      data.fields.forEach(field => fields.append(element('li', field)));
+      const links = element('div', '', 'relation');
+      links.append(element('h4', '직접 연결된 테이블'));
+      connected.forEach(([from, to, label]) => links.append(element('p', `${from} → ${to}\n${label}`)));
+      inspector.replaceChildren(element('div', '선택한 테이블', 'eyebrow'), element('code', name), element('h3', data.title), element('p', data.description), element('h4', '주요 필드'), fields, element('p', data.rule), links);
+      drawConnections();
+    }
+    nodes.forEach(node => node.addEventListener('click', () => selectTable(node.dataset.table)));
+    const scenarios = {
+      pending: { winner:null, description:'아직 결과가 없습니다. 승패에 반영하지 않습니다.', audit:'변경 이력 없음' },
+      saved: { winner:'a', description:'A팀 승리 · 유효한 완료 결과 1건 → A팀 각 1승, B팀 각 1패', audit:'최초 저장: 결과 없음 → A팀 승리' },
+      corrected: { winner:'b', description:'B팀 승리로 정정 · 이전 승패에 더하지 않고 현재 결과로 계산합니다.', audit:'최초 저장 → 정정: A팀 승리 → B팀 승리 (사유: 승리 팀 오입력)' },
+      invalidated: { winner:null, description:'결과 무효화 · 이 경기의 승패는 전적에서 제외됩니다.', audit:'최초 저장 → 정정 → 무효화 (사유: 결과 확인 필요)' }
+    };
+    function showScenario(name) {
+      const scenario = scenarios[name];
+      document.querySelectorAll('[data-scenario]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.scenario === name)));
+      document.querySelector('.demo-state').textContent = scenario.description;
+      const rows = document.getElementById('stat-rows');
+      rows.replaceChildren();
+      ['민수','지수','영희','철수'].forEach((person, index) => {
+        const team = index < 2 ? 'a' : 'b';
+        const wins = scenario.winner === team ? 1 : 0;
+        const losses = scenario.winner && scenario.winner !== team ? 1 : 0;
+        const row = document.createElement('tr');
+        [person, wins, losses, scenario.winner ? `${wins * 100}%` : '—'].forEach(value => row.append(element('td', value)));
+        rows.append(row);
+      });
+      document.getElementById('audit-output').textContent = `result_revisions: ${scenario.audit}`;
+    }
+    document.querySelectorAll('[data-scenario]').forEach(button => button.addEventListener('click', () => showScenario(button.dataset.scenario)));
+    document.getElementById('print-button').addEventListener('click', () => window.print());
+    new ResizeObserver(drawConnections).observe(board);
+    selectTable(selectedTable);
+  </script>
+</body>
+</html>
