@@ -1,0 +1,8 @@
+//
+//  Supabase.local.xcconfig.example
+//  OurLeague
+//
+//  Created by 양호준 on 2026/11/16.
+//
+
+SUPABASE_PUBLISHABLE_KEY = YOUR_SUPABASE_PUBLISHABLE_KEY

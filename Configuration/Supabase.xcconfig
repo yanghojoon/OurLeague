@@ -1,0 +1,12 @@
+//
+//  Supabase.xcconfig
+//  OurLeague
+//
+//  Created by 양호준 on 2026/11/16.
+//
+
+SUPABASE_PROJECT_REF = dwvogajwqeodwkjppdyw
+SUPABASE_URL = https:/$()/$(SUPABASE_PROJECT_REF).supabase.co
+SUPABASE_PUBLISHABLE_KEY =
+
+#include? "Supabase.local.xcconfig"

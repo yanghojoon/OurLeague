@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A6E9C0012FCA000000000001 /* SupabaseConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6E9C0012FCA000000000002 /* SupabaseConfiguration.swift */; };
 		DE2FFD2F2EA1CAEF00674784 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE2FFD2E2EA1CAEF00674784 /* Supabase.swift */; };
 		DE2FFD312EA1CB1700674784 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = DE2FFD302EA1CB1700674784 /* Supabase */; };
 		DE7757F02D54BD8900E2255D /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7757EF2D54BD8900E2255D /* SplashView.swift */; };
@@ -49,6 +50,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A6E9C0012FCA000000000002 /* SupabaseConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfiguration.swift; sourceTree = "<group>"; };
+		A6E9C0012FCA000000000003 /* Supabase.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Supabase.xcconfig; sourceTree = "<group>"; };
+		A6E9C0012FCA000000000004 /* Supabase-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Supabase-Info.plist"; sourceTree = "<group>"; };
 		DE2FFD2E2EA1CAEF00674784 /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
 		DE7757EF2D54BD8900E2255D /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		DE7757F12D54CD3F00E2255D /* Player.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player.swift; sourceTree = "<group>"; };
@@ -105,6 +109,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A6E9C0012FCA000000000005 /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				A6E9C0012FCA000000000003 /* Supabase.xcconfig */,
+				A6E9C0012FCA000000000004 /* Supabase-Info.plist */,
+			);
+			path = Configuration;
+			sourceTree = "<group>";
+		};
 		DE7757EE2D54BD6D00E2255D /* Splash */ = {
 			isa = PBXGroup;
 			children = (
@@ -132,6 +145,7 @@
 		DE7A18432B282579008E5CC3 = {
 			isa = PBXGroup;
 			children = (
+				A6E9C0012FCA000000000005 /* Configuration */,
 				DE7A184E2B282579008E5CC3 /* OurLeague */,
 				DE7A18612B28257B008E5CC3 /* OurLeagueTests */,
 				DE7A186B2B28257B008E5CC3 /* OurLeagueUITests */,
@@ -214,6 +228,7 @@
 			children = (
 				DE7A18552B28257B008E5CC3 /* Assets.xcassets */,
 				DE2FFD2E2EA1CAEF00674784 /* Supabase.swift */,
+				A6E9C0012FCA000000000002 /* SupabaseConfiguration.swift */,
 			);
 			path = Resource;
 			sourceTree = "<group>";
@@ -387,6 +402,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A6E9C0012FCA000000000001 /* SupabaseConfiguration.swift in Sources */,
 				DE7A18912B29E617008E5CC3 /* InformationInputView.swift in Sources */,
 				DE2FFD2F2EA1CAEF00674784 /* Supabase.swift in Sources */,
 				DE7757FE2D54F4FB00E2255D /* CalendarView.swift in Sources */,
@@ -555,6 +571,7 @@
 		};
 		DE7A18732B28257B008E5CC3 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A6E9C0012FCA000000000003 /* Supabase.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -564,6 +581,7 @@
 				DEVELOPMENT_TEAM = FA464JRW3F;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Configuration/Supabase-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -584,6 +602,7 @@
 		};
 		DE7A18742B28257B008E5CC3 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A6E9C0012FCA000000000003 /* Supabase.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -593,6 +612,7 @@
 				DEVELOPMENT_TEAM = FA464JRW3F;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Configuration/Supabase-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
