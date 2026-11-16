@@ -10,6 +10,93 @@ import XCTest
 
 final class OurLeagueTests: XCTestCase {
 
+    func testSupabaseConfigurationLoadsPublishableKey() throws {
+        let configuration = try SupabaseConfiguration(infoDictionary: [
+            "SUPABASE_URL": " https://dwvogajwqeodwkjppdyw.supabase.co \n",
+            "SUPABASE_PUBLISHABLE_KEY": " sb_publishable_configuration_test \n"
+        ])
+
+        XCTAssertEqual(configuration.url.absoluteString, "https://dwvogajwqeodwkjppdyw.supabase.co")
+        XCTAssertEqual(configuration.publishableKey, "sb_publishable_configuration_test")
+    }
+
+    func testSupabaseConfigurationRejectsMissingURL() {
+        XCTAssertThrowsError(try SupabaseConfiguration(infoDictionary: [:])) { error in
+            XCTAssertEqual(error as? SupabaseConfigurationError, .missingValue("SUPABASE_URL"))
+        }
+    }
+
+    func testSupabaseConfigurationRejectsMissingKey() {
+        XCTAssertThrowsError(try SupabaseConfiguration(infoDictionary: [
+            "SUPABASE_URL": "https://dwvogajwqeodwkjppdyw.supabase.co"
+        ])) { error in
+            XCTAssertEqual(error as? SupabaseConfigurationError, .missingValue("SUPABASE_PUBLISHABLE_KEY"))
+        }
+    }
+
+    func testSupabaseConfigurationRejectsPlaceholderKeys() {
+        for key in ["", "  ", "$(SUPABASE_PUBLISHABLE_KEY)", "YOUR_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_REPLACE_ME"] {
+            XCTAssertThrowsError(try SupabaseConfiguration(infoDictionary: [
+                "SUPABASE_URL": "https://dwvogajwqeodwkjppdyw.supabase.co",
+                "SUPABASE_PUBLISHABLE_KEY": key
+            ])) { error in
+                XCTAssertEqual(error as? SupabaseConfigurationError, .missingValue("SUPABASE_PUBLISHABLE_KEY"))
+            }
+        }
+    }
+
+    func testSupabaseConfigurationRejectsInvalidURLs() {
+        let invalidURLs = [
+            "http://dwvogajwqeodwkjppdyw.supabase.co",
+            "https://",
+            "not-a-url",
+            "https://user:password@example.com",
+            "https://example.com/rest/v1",
+            "https://example.com?token=test",
+            "https://example.com#fragment",
+            "https://example.com:8443"
+        ]
+        for url in invalidURLs {
+            XCTAssertThrowsError(try SupabaseConfiguration(infoDictionary: [
+                "SUPABASE_URL": url,
+                "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_configuration_test"
+            ])) { error in
+                XCTAssertEqual(error as? SupabaseConfigurationError, .invalidURL)
+            }
+        }
+    }
+
+    func testSupabaseConfigurationLoadsLegacyAnonKey() throws {
+        let payload = Data("{\"role\":\"anon\"}".utf8).base64EncodedString().replacingOccurrences(of: "=", with: "")
+        let key = "eyJhbGciOiJIUzI1NiJ9.\(payload).test_signature"
+        let configuration = try SupabaseConfiguration(infoDictionary: [
+            "SUPABASE_URL": "https://dwvogajwqeodwkjppdyw.supabase.co",
+            "SUPABASE_PUBLISHABLE_KEY": key
+        ])
+        XCTAssertEqual(configuration.publishableKey, key)
+    }
+
+    func testSupabaseConfigurationRejectsPrivilegedAndMalformedKeys() {
+        for key in ["sb_secret_configuration_test", "eyJhbGciOiJIUzI1NiJ9.test.signature", "service_role", "sb_publishable_invalid key"] {
+            XCTAssertThrowsError(try SupabaseConfiguration(infoDictionary: [
+                "SUPABASE_URL": "https://dwvogajwqeodwkjppdyw.supabase.co",
+                "SUPABASE_PUBLISHABLE_KEY": key
+            ])) { error in
+                XCTAssertEqual(error as? SupabaseConfigurationError, .invalidPublishableKey)
+            }
+        }
+    }
+
+    func testSupabaseConfigurationRejectsLegacyServiceRoleKey() {
+        let payload = Data("{\"role\":\"service_role\"}".utf8).base64EncodedString().replacingOccurrences(of: "=", with: "")
+        XCTAssertThrowsError(try SupabaseConfiguration(infoDictionary: [
+            "SUPABASE_URL": "https://dwvogajwqeodwkjppdyw.supabase.co",
+            "SUPABASE_PUBLISHABLE_KEY": "eyJhbGciOiJIUzI1NiJ9.\(payload).test_signature"
+        ])) { error in
+            XCTAssertEqual(error as? SupabaseConfigurationError, .invalidPublishableKey)
+        }
+    }
+
     func testMembershipKeepsClubSpecificRole() throws {
         let accountID = UUID()
         let owner = Membership(id: UUID(), clubID: UUID(), accountID: accountID, role: .owner, status: .approved)
