@@ -22,7 +22,7 @@ struct SplashView: View {
                 LoginView(authStore: authStore)
             case .signedIn(let account):
                 NavigationStack {
-                    GameMakerView()
+                    ProfileGateView(accountID: account.id)
                         .toolbar {
                             ToolbarItem(placement: .topBarTrailing) {
                                 Button("로그아웃") {
