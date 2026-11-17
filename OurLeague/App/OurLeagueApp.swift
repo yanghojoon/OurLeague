@@ -17,15 +17,16 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 }
 
 @main
+@MainActor
 struct OurLeagueApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    @StateObject private var authStore = AuthStore {
+        SupabaseAuthService(client: try SupabaseEnvironment.client())
+    }
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack {
-//                InformationInputView()
-                SplashView()
-            }
+            SplashView(authStore: authStore)
         }
     }
 }

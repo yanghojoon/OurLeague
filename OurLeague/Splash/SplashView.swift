@@ -7,33 +7,61 @@
 
 import SwiftUI
 
+@MainActor
 struct SplashView: View {
-    @State private var navigateToNextPage = false
+    @ObservedObject var authStore: AuthStore
+    @State private var showsSignOutConfirmation = false
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: [Color.green, Color.yellow]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            Image(systemName: "tennis.racket.circle")
-                .resizable()
-                .frame(width: 100, height: 100)
-            if navigateToNextPage {
-                GameMakerView()
-                    .transition(.opacity)
+        Group {
+            switch authStore.state {
+            case .restoring:
+                ProgressView("로그인 상태 확인 중…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .signedOut:
+                LoginView(authStore: authStore)
+            case .signedIn(let account):
+                NavigationStack {
+                    GameMakerView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("로그아웃") {
+                                    showsSignOutConfirmation = true
+                                }
+                                .disabled(authStore.isBusy)
+                                .accessibilityIdentifier("signOutButton")
+                            }
+                        }
+                        .safeAreaInset(edge: .bottom) {
+                            if let message = authStore.errorMessage {
+                                Text(message)
+                                    .font(.callout)
+                                    .foregroundStyle(.red)
+                                    .padding()
+                                    .background(.regularMaterial)
+                            }
+                        }
+                }
+                .id(account.id)
+                .confirmationDialog("이 기기에서 로그아웃할까요?", isPresented: $showsSignOutConfirmation) {
+                    Button("로그아웃", role: .destructive) {
+                        Task { await authStore.signOut() }
+                    }
+                    Button("취소", role: .cancel) { }
+                }
+            case .unavailable:
+                ContentUnavailableView {
+                    Label("로그인 상태 확인 필요", systemImage: "wifi.exclamationmark")
+                } description: {
+                    Text(authStore.errorMessage ?? "연결 상태를 확인하고 다시 시도하세요.")
+                } actions: {
+                    Button("다시 시도") {
+                        Task { await authStore.retrySession() }
+                    }
+                    .disabled(authStore.isBusy)
+                }
             }
         }
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(3)) {
-                navigateToNextPage = true
-            }
-        }
+        .task(id: authStore.observationID) { await authStore.observeSession() }
     }
-}
-
-#Preview {
-    SplashView()
 }
