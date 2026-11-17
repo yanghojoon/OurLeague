@@ -25,7 +25,7 @@
 let client = try SupabaseEnvironment.client()
 ```
 
-호출하는 기능에서 오류를 처리한다. 클라이언트 생성만으로 네트워크 요청이나 로그인이 실행되지는 않는다. 기존 화면은 아직 이 클라이언트를 호출하지 않으며, 로그인과 데이터 조회·저장 연결은 후속 구현 범위다.
+호출하는 기능에서 오류를 처리한다. 클라이언트 생성만으로 네트워크 요청이나 로그인이 실행되지는 않는다. 앱의 인증 진입점은 이 클라이언트를 사용한다. [Apple 로그인 구현과 외부 설정](supabase-login.md)을 참고한다. 클럽 데이터 조회·저장 화면 연결은 후속 구현 범위다.
 
 ## 키와 권한
 
@@ -52,4 +52,4 @@ let client = try SupabaseEnvironment.client()
 
 보안 Advisor에는 authenticated 역할이 조회 가능한 테이블·뷰 12개의 GraphQL 스키마 노출 경고가 남아 있다. 이는 데이터 행의 무제한 공개를 뜻하지 않는다. 현재 로그인 사용자 조회를 위한 권한은 유지했으며, 테이블 구조 자체의 비노출이 필요하면 별도로 검토한다. [경고 설명 및 대응](https://supabase.com/docs/guides/database/database-linter?lint=0027_pg_graphql_authenticated_table_exposed).
 
-이 작업 환경에는 전체 Xcode가 없으므로 iOS 앱 빌드·시뮬레이터 실행·실제 SDK 인증 흐름은 검증하지 못한다. 전체 Xcode 환경에서 OurLeague 스킴 빌드 및 XCTest를 실행해야 한다. Apple 로그인 공급자, 로그인 UI, 세션 처리와 인증된 RPC 동작은 별도 단계다. DB 스키마와 테스트 데이터는 이 설정 단계에서 변경하지 않는다.
+이 작업 환경에는 전체 Xcode가 없으므로 iOS 앱 빌드·시뮬레이터 실행·실제 SDK 인증 흐름은 검증하지 못한다. 전체 Xcode 환경에서 OurLeague 스킴 빌드 및 XCTest를 실행해야 한다. 로그인 UI와 세션 처리는 후속 로그인 작업에서 추가했으며, Apple 공급자 활성화와 실기기 인증, 인증된 RPC 동작은 별도 검증이 필요하다. DB 스키마와 테스트 데이터는 이 설정 단계에서 변경하지 않는다.
