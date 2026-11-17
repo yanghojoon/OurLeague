@@ -10,6 +10,183 @@ import XCTest
 
 final class OurLeagueTests: XCTestCase {
 
+    @MainActor
+    func testAuthRestoresSignedInAccount() async {
+        let service = TestAuthService()
+        let account = AuthAccount(id: UUID())
+        service.updates = [.signedIn(account)]
+        let store = AuthStore { service }
+
+        await store.observeSession()
+
+        XCTAssertEqual(store.state, .signedIn(account))
+        XCTAssertNil(store.errorMessage)
+    }
+
+    @MainActor
+    func testAuthClearsAccountWhenSessionEnds() async {
+        let service = TestAuthService()
+        service.updates = [.signedIn(AuthAccount(id: UUID())), .signedOut]
+        let store = AuthStore { service }
+
+        await store.observeSession()
+
+        XCTAssertEqual(store.state, .signedOut)
+    }
+
+    @MainActor
+    func testAuthRestoreFailureCanBeRetried() async {
+        let service = TestAuthService()
+        service.updates = [.unavailable]
+        let store = AuthStore { service }
+        await store.observeSession()
+        XCTAssertEqual(store.state, .unavailable)
+
+        service.account = AuthAccount(id: UUID())
+        await store.retrySession()
+
+        XCTAssertEqual(store.state, service.account.map(AuthSessionState.signedIn))
+        XCTAssertNil(store.errorMessage)
+        XCTAssertEqual(store.observationID, 1)
+        XCTAssertEqual(store.isBusy, false)
+    }
+
+    @MainActor
+    func testAuthConfigurationFailureDoesNotEnterApp() async {
+        let store = AuthStore {
+            throw SupabaseConfigurationError.missingValue("SUPABASE_URL")
+        }
+
+        await store.observeSession()
+
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertTrue(store.errorMessage?.contains("SUPABASE_URL") == true)
+    }
+
+    @MainActor
+    func testAuthRetryFailureKeepsAppLocked() async {
+        let service = TestAuthService()
+        service.restoreShouldFail = true
+        let store = AuthStore { service }
+
+        await store.retrySession()
+
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertEqual(store.isBusy, false)
+        XCTAssertTrue(store.errorMessage != nil)
+    }
+
+    @MainActor
+    func testAuthRestoreWithoutSessionShowsLogin() async {
+        let service = TestAuthService()
+        let store = AuthStore { service }
+
+        await store.retrySession()
+
+        XCTAssertEqual(store.state, .signedOut)
+        XCTAssertNil(store.errorMessage)
+    }
+
+    @MainActor
+    func testAppleLoginPassesTokenAndNonceToService() async {
+        let service = TestAuthService()
+        let store = AuthStore { service }
+        await store.observeSession()
+
+        await store.signInWithApple(idToken: "test-id-token", nonce: "test-raw-nonce")
+
+        XCTAssertEqual(service.receivedToken, "test-id-token")
+        XCTAssertEqual(service.receivedNonce, "test-raw-nonce")
+        XCTAssertEqual(store.state, .signedIn(service.loginAccount))
+        XCTAssertEqual(store.isBusy, false)
+    }
+
+    @MainActor
+    func testAppleLoginRejectsEmptyCredentials() async {
+        let service = TestAuthService()
+        let store = AuthStore { service }
+        await store.observeSession()
+
+        await store.signInWithApple(idToken: "", nonce: "nonce")
+        await store.signInWithApple(idToken: "token", nonce: "")
+
+        XCTAssertEqual(service.signInCount, 0)
+        XCTAssertEqual(store.state, .signedOut)
+        XCTAssertTrue(store.errorMessage != nil)
+    }
+
+    @MainActor
+    func testAppleLoginFailureDoesNotExposeToken() async {
+        let service = TestAuthService()
+        service.shouldFail = true
+        let store = AuthStore { service }
+        await store.observeSession()
+
+        await store.signInWithApple(idToken: "private-test-token", nonce: "private-test-nonce")
+
+        XCTAssertEqual(store.state, .signedOut)
+        XCTAssertEqual(store.isBusy, false)
+        XCTAssertTrue(store.errorMessage != nil)
+        XCTAssertEqual(store.errorMessage?.contains("private-test"), false)
+    }
+
+    @MainActor
+    func testAppleLoginPreventsConcurrentRequests() async {
+        let service = TestAuthService()
+        let store = AuthStore { service }
+        await store.observeSession()
+        service.onSignIn = {
+            await store.signInWithApple(idToken: "duplicate", nonce: "duplicate")
+        }
+
+        await store.signInWithApple(idToken: "token", nonce: "nonce")
+        service.onSignIn = nil
+
+        XCTAssertEqual(service.signInCount, 1)
+    }
+
+    @MainActor
+    func testSignOutClearsAccount() async {
+        let service = TestAuthService()
+        service.updates = [.signedIn(service.loginAccount)]
+        let store = AuthStore { service }
+        await store.observeSession()
+
+        await store.signOut()
+
+        XCTAssertEqual(store.state, .signedOut)
+        XCTAssertEqual(service.signOutCount, 1)
+        XCTAssertEqual(store.isBusy, false)
+    }
+
+    @MainActor
+    func testSignOutFailureAfterLocalRemovalStillClearsAccount() async {
+        let service = TestAuthService()
+        service.updates = [.signedIn(service.loginAccount)]
+        service.shouldFail = true
+        let store = AuthStore { service }
+        await store.observeSession()
+
+        await store.signOut()
+
+        XCTAssertEqual(store.state, .signedOut)
+        XCTAssertTrue(store.errorMessage != nil)
+    }
+
+    func testAppleNonceHashUsesSHA256() {
+        let nonce = AppleSignInNonce(rawValue: "abc")
+        XCTAssertEqual(nonce.sha256, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+    }
+
+    func testAppleNonceIsRandomHex() throws {
+        let first = try AppleSignInNonce.generate()
+        let second = try AppleSignInNonce.generate()
+        XCTAssertEqual(first.rawValue.count, 64)
+        XCTAssertEqual(first.sha256.count, 64)
+        XCTAssertTrue(first.rawValue.allSatisfy { $0.isHexDigit })
+        XCTAssertNotEqual(first.rawValue, second.rawValue)
+    }
+
     func testSupabaseConfigurationLoadsPublishableKey() throws {
         let configuration = try SupabaseConfiguration(infoDictionary: [
             "SUPABASE_URL": " https://dwvogajwqeodwkjppdyw.supabase.co \n",
@@ -176,4 +353,50 @@ final class OurLeagueTests: XCTestCase {
         XCTAssertEqual(encoded["legacy_player_id"] as? Int, 1)
     }
 
+}
+
+@MainActor
+private final class TestAuthService: LeagueAuthService {
+    let loginAccount = AuthAccount(id: UUID())
+    var account: AuthAccount?
+    var updates: [AuthSessionState] = [.signedOut]
+    var shouldFail = false
+    var restoreShouldFail = false
+    var signInCount = 0
+    var signOutCount = 0
+    var receivedToken: String?
+    var receivedNonce: String?
+    var onSignIn: (() async -> Void)?
+
+    func sessionUpdates() -> AsyncStream<AuthSessionState> {
+        AsyncStream { continuation in
+            for update in updates { continuation.yield(update) }
+            continuation.finish()
+        }
+    }
+
+    func restoreSession() async throws -> AuthAccount? {
+        if restoreShouldFail { throw TestError.unavailable }
+        return account
+    }
+
+    func signInWithApple(idToken: String, nonce: String) async throws -> AuthAccount {
+        signInCount += 1
+        receivedToken = idToken
+        receivedNonce = nonce
+        if shouldFail { throw TestError.unavailable }
+        await onSignIn?()
+        account = loginAccount
+        return loginAccount
+    }
+
+    func signOut() async throws {
+        signOutCount += 1
+        account = nil
+        if shouldFail { throw TestError.unavailable }
+    }
+
+    private enum TestError: Error {
+        case unavailable
+    }
 }
