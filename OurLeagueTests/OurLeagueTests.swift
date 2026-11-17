@@ -11,6 +11,187 @@ import XCTest
 final class OurLeagueTests: XCTestCase {
 
     @MainActor
+    func testMissingProfileRequiresNickname() async {
+        let service = TestProfileService()
+        let store = ProfileStore(accountID: service.accountID) { service }
+        await store.load()
+        XCTAssertEqual(store.state, .needsName)
+        XCTAssertNil(store.errorMessage)
+    }
+
+    @MainActor
+    func testExistingProfileEntersApp() async {
+        let service = TestProfileService()
+        let profile = AccountProfile(id: service.accountID, displayName: "기존 회원")
+        service.profile = profile
+        let store = ProfileStore(accountID: service.accountID) { service }
+        await store.load()
+        XCTAssertEqual(store.state, .ready(profile))
+    }
+
+    @MainActor
+    func testProfileLoadFailureDoesNotStartOnboarding() async {
+        let service = TestProfileService()
+        service.shouldFail = true
+        let store = ProfileStore(accountID: service.accountID) { service }
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertTrue(store.errorMessage != nil)
+        await store.save(displayName: "회원")
+        XCTAssertEqual(service.commands.count, 0)
+        service.shouldFail = false
+        await store.load()
+        XCTAssertEqual(store.state, .needsName)
+        XCTAssertNil(store.errorMessage)
+    }
+
+    @MainActor
+    func testProfileConfigurationFailureKeepsAppLocked() async {
+        let store = ProfileStore(accountID: UUID()) { throw ProfileError.unexpectedAccount }
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertEqual(store.isBusy, false)
+    }
+
+    @MainActor
+    func testProfileRejectsAnotherAccountsData() async {
+        let service = TestProfileService()
+        service.profile = AccountProfile(id: UUID(), displayName: "다른 회원")
+        let store = ProfileStore(accountID: service.accountID) { service }
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+    }
+
+    func testProfileCommandTrimsAndEncodesRPCContract() throws {
+        let requestID = UUID()
+        let command = try SaveProfileCommand(displayName: " \n회원\t ", requestID: requestID)
+        let encoded = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(command)) as? [String: Any])
+        let payload = try XCTUnwrap(encoded["payload"] as? [String: Any])
+        XCTAssertEqual(encoded["operation"] as? String, "save_profile")
+        XCTAssertEqual(encoded["request_id"] as? String, requestID.uuidString)
+        XCTAssertEqual(payload["display_name"] as? String, "회원")
+        XCTAssertNil(payload["id"])
+    }
+
+    func testProfileNicknameUsesDatabaseUnicodeLength() throws {
+        XCTAssertEqual(try SaveProfileCommand(displayName: "가").payload.displayName, "가")
+        XCTAssertEqual(try SaveProfileCommand(displayName: String(repeating: "가", count: 40)).payload.displayName.unicodeScalars.count, 40)
+        XCTAssertThrowsError(try SaveProfileCommand(displayName: String(repeating: "가", count: 41))) { _ in }
+        XCTAssertThrowsError(try SaveProfileCommand(displayName: String(repeating: "e\u{301}", count: 21))) { _ in }
+        XCTAssertThrowsError(try SaveProfileCommand(displayName: " \n\t ")) { _ in }
+    }
+
+    @MainActor
+    func testInvalidNicknameDoesNotCallServer() async {
+        let service = TestProfileService()
+        let store = ProfileStore(accountID: service.accountID) { service }
+        await store.load()
+        await store.save(displayName: "   ")
+        await store.save(displayName: String(repeating: "가", count: 41))
+        XCTAssertEqual(service.commands.count, 0)
+        XCTAssertEqual(store.state, .needsName)
+        XCTAssertTrue(store.errorMessage != nil)
+    }
+
+    @MainActor
+    func testProfileEntersAppOnlyAfterSaveAcknowledgement() async {
+        let service = TestProfileService()
+        let store = ProfileStore(accountID: service.accountID) { service }
+        await store.load()
+        service.onSave = {
+            XCTAssertEqual(store.state, .needsName)
+            XCTAssertEqual(store.isBusy, true)
+        }
+        await store.save(displayName: " 회원 ")
+        XCTAssertEqual(store.state, .ready(AccountProfile(id: service.accountID, displayName: "회원")))
+        XCTAssertEqual(store.isBusy, false)
+        XCTAssertNil(store.errorMessage)
+    }
+
+    @MainActor
+    func testProfileSaveFailureReusesRequestIDForSameNickname() async throws {
+        let service = TestProfileService()
+        let store = ProfileStore(accountID: service.accountID) { service }
+        await store.load()
+        service.shouldFail = true
+        await store.save(displayName: "회원")
+        XCTAssertEqual(store.state, .needsName)
+        XCTAssertTrue(store.errorMessage != nil)
+        service.shouldFail = false
+        await store.save(displayName: " 회원 ")
+        XCTAssertEqual(service.commands.count, 2)
+        XCTAssertEqual(service.commands[0], service.commands[1])
+        XCTAssertEqual(store.state, .ready(AccountProfile(id: service.accountID, displayName: "회원")))
+    }
+
+    @MainActor
+    func testChangedNicknameUsesNewRequestID() async {
+        let service = TestProfileService()
+        let store = ProfileStore(accountID: service.accountID) { service }
+        await store.load()
+        service.shouldFail = true
+        await store.save(displayName: "이전 이름")
+        await store.save(displayName: "새 이름")
+        XCTAssertEqual(service.commands.count, 2)
+        XCTAssertNotEqual(service.commands[0].requestID, service.commands[1].requestID)
+    }
+
+    @MainActor
+    func testProfilePreventsConcurrentSaveAndLoad() async {
+        let service = TestProfileService()
+        let store = ProfileStore(accountID: service.accountID) { service }
+        await store.load()
+        service.onSave = {
+            await store.save(displayName: "중복")
+            await store.load()
+        }
+        await store.save(displayName: "회원")
+        service.onSave = nil
+        XCTAssertEqual(service.commands.count, 1)
+        XCTAssertEqual(service.fetchCount, 1)
+    }
+
+    @MainActor
+    func testProfileRejectsMismatchedSaveResponse() async {
+        let service = TestProfileService()
+        let store = ProfileStore(accountID: service.accountID) { service }
+        await store.load()
+        service.savedAccountID = UUID()
+        await store.save(displayName: "회원")
+        XCTAssertEqual(store.state, .needsName)
+        XCTAssertTrue(store.errorMessage != nil)
+    }
+
+    @MainActor
+    func testCancelledProfileSaveDoesNotEnterApp() async {
+        let service = TestProfileService()
+        let store = ProfileStore(accountID: service.accountID) { service }
+        await store.load()
+        service.onSave = { withUnsafeCurrentTask { $0?.cancel() } }
+        let task = Task { await store.save(displayName: "회원") }
+        await task.value
+        service.onSave = nil
+        XCTAssertEqual(store.state, .needsName)
+        XCTAssertEqual(store.isBusy, false)
+    }
+
+    @MainActor
+    func testCancelledProfileLoadDoesNotEnterApp() async {
+        let service = TestProfileService()
+        let profile = AccountProfile(id: service.accountID, displayName: "회원")
+        service.profile = profile
+        service.onFetch = { withUnsafeCurrentTask { $0?.cancel() } }
+        let store = ProfileStore(accountID: service.accountID) { service }
+        let task = Task { await store.load() }
+        await task.value
+        XCTAssertEqual(store.state, .loading)
+        XCTAssertEqual(store.isBusy, false)
+        service.onFetch = nil
+        await store.load()
+        XCTAssertEqual(store.state, .ready(profile))
+    }
+
+    @MainActor
     func testAuthRestoresSignedInAccount() async {
         let service = TestAuthService()
         let account = AuthAccount(id: UUID())
@@ -353,6 +534,32 @@ final class OurLeagueTests: XCTestCase {
         XCTAssertEqual(encoded["legacy_player_id"] as? Int, 1)
     }
 
+}
+
+@MainActor
+private final class TestProfileService: LeagueProfileService {
+    let accountID = UUID()
+    var profile: AccountProfile?
+    var savedAccountID: UUID?
+    var shouldFail = false
+    var commands: [SaveProfileCommand] = []
+    var fetchCount = 0
+    var onSave: (() async -> Void)?
+    var onFetch: (() -> Void)?
+
+    func fetchProfile(accountID: UUID) async throws -> AccountProfile? {
+        fetchCount += 1
+        onFetch?()
+        if shouldFail { throw ProfileError.unexpectedAccount }
+        return profile
+    }
+
+    func saveProfile(_ command: SaveProfileCommand, accountID: UUID) async throws -> AccountProfile {
+        commands.append(command)
+        await onSave?()
+        if shouldFail { throw ProfileError.unexpectedAccount }
+        return AccountProfile(id: savedAccountID ?? accountID, displayName: command.payload.displayName)
+    }
 }
 
 @MainActor
