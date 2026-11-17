@@ -5,7 +5,7 @@
 ## 구현 흐름
 
 1. 앱이 `AuthStore`를 만들고 Supabase의 인증 상태 스트림을 구독한다.
-2. 저장된 세션이 없으면 `LoginView`, 유효한 세션이 있으면 기존 `GameMakerView`를 표시한다. 복구 실패 시 재시도 화면을 표시하며 임의로 로그인 완료로 취급하지 않는다.
+2. 저장된 세션이 없으면 `LoginView`, 유효한 세션이 있으면 `ProfileGateView`에서 본인 프로필을 확인한다. 프로필이 없으면 닉네임을 등록하고, 조회 또는 저장 성공 후 기존 `GameMakerView`를 표시한다. 복구 실패 시 재시도 화면을 표시하며 임의로 로그인 완료로 취급하지 않는다. 자세한 내용은 [프로필 등록](supabase-profile.md)을 참고한다.
 3. Apple 버튼마다 `SecRandomCopyBytes`로 32바이트 nonce를 생성한다. Apple 요청에는 SHA-256 해시를, Supabase `signInWithIdToken`에는 원본 nonce와 Apple ID token을 전달한다.
 4. Apple 인증 취소는 오류로 표시하지 않는다. 토큰 누락, 로그인 실패는 화면에 안내하며 중복 Supabase 로그인 요청은 막는다.
 5. 세션 저장과 자동 갱신은 기존 Supabase.swift 2.36.0 SDK에 맡긴다. Apple 플랫폼의 SDK 기본 저장소는 Keychain이다. 앱에서 토큰을 UserDefaults나 로그에 복사하지 않는다.
@@ -30,6 +30,6 @@
 - 로컬에서는 Foundation·Combine·CryptoKit·Security 기반 계약 검사 28개가 통과했다(기존 모델·설정 검사 14개 + 인증·nonce 검사 14개). Xcode 프로젝트와 entitlement 문법, 인증 소스 5개의 타깃 포함 여부 및 Debug/Release 서명 설정 검사도 통과했다.
 - 이 환경은 Command Line Tools의 Swift 5.8.1만 있어 전체 iOS 빌드, XCTest 러너, 시뮬레이터 화면 검증과 실제 Apple → Supabase 왕복 인증은 실행하지 못했다. SDK 자체의 최소 Swift 도구 버전은 5.10이다. 단순 Swift 문법 검사나 mock 검사가 실제 인증 성공을 뜻하지 않는다.
 - 외부 설정 후 첫 로그인/재실행 복구/취소/오프라인 복구 재시도/로그아웃/재로그인을 실기기에서 확인하고 Supabase Auth Users와 대조한다. 서버가 토큰을 검증하며 화면 상태만으로 DB 권한을 부여하지 않는다.
-- 로그인 후 진입 화면은 기존 로컬 경기 생성 프로토타입이다. 클럽 조회·가입 승인·프로필 닉네임 저장·계정 삭제는 이번 로그인 구현에 포함하지 않았다. 따라서 PRD FR-01 전체나 App Store 배포 준비가 완료된 것은 아니다. 최초 로그인만으로 기존 클럽 운영자나 명단 참가자에 자동 연결하지 않는다.
+- 프로필 확인 후 진입 화면은 기존 로컬 경기 생성 프로토타입이다. 클럽 조회·가입 승인·계정 삭제는 아직 구현하지 않았다. 따라서 PRD FR-01 전체나 App Store 배포 준비가 완료된 것은 아니다. 최초 로그인만으로 기존 클럽 운영자나 명단 참가자에 자동 연결하지 않는다.
 
 주요 파일: `OurLeague/Auth/AuthSession.swift`, `AuthStore.swift`, `SupabaseAuthService.swift`, `AppleSignInNonce.swift`, `LoginView.swift`, `OurLeague/Splash/SplashView.swift`.
