@@ -29,8 +29,8 @@ struct ProfileGateView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .needsName:
                 nicknameForm
-            case .ready:
-                GameMakerView()
+            case .ready(let profile):
+                ClubListView(accountID: profile.id)
             case .unavailable:
                 ContentUnavailableView {
                     Label("프로필 확인 필요", systemImage: "wifi.exclamationmark")
