@@ -11,9 +11,12 @@ import SwiftUI
 struct ClubListView: View {
     @StateObject private var store: ClubStore
     @State private var showsCreation = false
+    @State private var showsMembershipRequest = false
     @State private var reloadID = UUID()
+    private let accountID: UUID
 
     init(accountID: UUID) {
+        self.accountID = accountID
         _store = StateObject(wrappedValue: ClubStore(accountID: accountID) {
             SupabaseClubService(client: try SupabaseEnvironment.client())
         })
@@ -45,6 +48,9 @@ struct ClubListView: View {
         .sheet(isPresented: $showsCreation) {
             ClubCreationView(store: store)
         }
+        .sheet(isPresented: $showsMembershipRequest, onDismiss: { reloadID = UUID() }) {
+            MembershipRequestView(accountID: accountID)
+        }
         .tint(.green)
     }
 
@@ -74,6 +80,10 @@ struct ClubListView: View {
                 }
             }
             Section {
+                Button { showsMembershipRequest = true } label: {
+                    Label("동호회 가입·승인 상태", systemImage: "person.badge.key")
+                }
+                .accessibilityIdentifier("joinClubButton")
                 Button { showsCreation = true } label: {
                     Label("새 동호회 만들기", systemImage: "plus.circle.fill")
                 }
@@ -82,7 +92,7 @@ struct ClubListView: View {
                     Label("목록 새로고침", systemImage: "arrow.clockwise")
                 }
             } footer: {
-                Text("여러 동호회에 소속될 수 있어요. 가입 신청과 초대 수락은 다음 단계에서 지원합니다.")
+                Text("여러 동호회에 소속될 수 있어요. 운영자에게 받은 회원 초대 코드로 가입을 신청하세요.")
             }
         }
         .navigationTitle("내 동호회")
