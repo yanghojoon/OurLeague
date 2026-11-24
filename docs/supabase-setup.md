@@ -52,4 +52,4 @@ let client = try SupabaseEnvironment.client()
 
 보안 Advisor에는 authenticated 역할이 조회 가능한 테이블·뷰 12개의 GraphQL 스키마 노출 경고가 남아 있다. 이는 데이터 행의 무제한 공개를 뜻하지 않는다. 현재 로그인 사용자 조회를 위한 권한은 유지했으며, 테이블 구조 자체의 비노출이 필요하면 별도로 검토한다. [경고 설명 및 대응](https://supabase.com/docs/guides/database/database-linter?lint=0027_pg_graphql_authenticated_table_exposed).
 
-이 작업 환경에는 전체 Xcode가 없으므로 iOS 앱 빌드·시뮬레이터 실행·실제 SDK 인증 흐름은 검증하지 못한다. 전체 Xcode 환경에서 OurLeague 스킴 빌드 및 XCTest를 실행해야 한다. 로그인 UI와 세션 처리는 후속 로그인 작업에서 추가했으며, Apple 공급자 활성화와 실기기 인증, 인증된 RPC 동작은 별도 검증이 필요하다. DB 스키마와 테스트 데이터는 이 설정 단계에서 변경하지 않는다.
+초기에는 선택된 CLI 경로가 Command Line Tools여서 앱 빌드를 검증하지 못했다. Xcode 미설치라는 판단은 잘못되었으며, 2026-11-24에 실제 Xcode 경로를 지정해 [시뮬레이터 빌드·테스트](xcode-verification.md)를 완료했다. 같은 날 Apple 공급자 활성화도 확인했다. 실제 Apple 계정 인증과 인증된 RPC 저장은 별도 검증이 필요하다. DB 스키마와 테스트 데이터는 이 설정 단계에서 변경하지 않는다.
