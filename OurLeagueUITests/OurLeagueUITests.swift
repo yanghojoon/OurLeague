@@ -22,12 +22,25 @@ final class OurLeagueUITests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    @MainActor
+    func testLoginScreenAppearsWithoutSession() throws {
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let signInButton = app.buttons["appleSignInButton"]
+        XCTAssertTrue(signInButton.waitForExistence(timeout: 20))
+        XCTAssertTrue(signInButton.isHittable)
+        XCTAssertFalse(app.staticTexts["authErrorMessage"].exists)
+        XCTAssertFalse(app.buttons["createClubButton"].exists)
+
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Signed-out login screen"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(signInButton.waitForExistence(timeout: 20))
     }
 
     func testLaunchPerformance() throws {

@@ -11,6 +11,278 @@ import XCTest
 final class OurLeagueTests: XCTestCase {
 
     @MainActor
+    func testClubEmptyListIsNotAnError() async {
+        let service = TestClubService()
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        XCTAssertEqual(store.state, .loaded)
+        XCTAssertEqual(store.memberships, [])
+        XCTAssertNil(store.selectedMembership)
+    }
+
+    @MainActor
+    func testClubConfigurationFailureKeepsListLocked() async {
+        let store = ClubStore(accountID: UUID()) { throw ClubError.invalidMembership }
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertEqual(store.memberships, [])
+        XCTAssertEqual(store.isBusy, false)
+        let success = await store.create(name: "동호회", description: "")
+        XCTAssertEqual(success, false)
+    }
+
+    @MainActor
+    func testClubClosedOwnerCannotManage() {
+        let service = TestClubService()
+        let entry = service.entry()
+        let closed = Club(id: entry.id, name: entry.club.name, description: "", ownerAccountID: service.accountID, status: .closed, legacyID: nil)
+        XCTAssertEqual(ClubMembership(membership: entry.membership, club: closed).canManage, false)
+    }
+
+    @MainActor
+    func testClubLoadFailureCanBeRetried() async {
+        let service = TestClubService()
+        service.fetchShouldFail = true
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertTrue(store.errorMessage != nil)
+        service.fetchShouldFail = false
+        await store.load()
+        XCTAssertEqual(store.state, .loaded)
+        XCTAssertNil(store.errorMessage)
+    }
+
+    @MainActor
+    func testClubSelectionKeepsRolesSeparate() async {
+        let service = TestClubService()
+        let owner = service.entry(role: .owner)
+        let member = service.entry(role: .member)
+        service.entries = [owner, member]
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        store.select(clubID: owner.id)
+        XCTAssertEqual(store.selectedMembership?.canManage, true)
+        store.select(clubID: member.id)
+        XCTAssertEqual(store.selectedMembership?.canManage, false)
+        XCTAssertEqual(store.selectedMembership?.id, member.id)
+        store.select(clubID: UUID())
+        XCTAssertEqual(store.selectedMembership?.id, member.id)
+        store.select(clubID: nil)
+        XCTAssertNil(store.selectedMembership)
+    }
+
+    @MainActor
+    func testClubRefreshFailureRemovesPreviousSelection() async {
+        let service = TestClubService()
+        let entry = service.entry()
+        service.entries = [entry]
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        store.select(clubID: entry.id)
+        service.fetchShouldFail = true
+        await store.load()
+        XCTAssertNil(store.selectedMembership)
+        XCTAssertEqual(store.memberships, [])
+        XCTAssertEqual(store.state, .unavailable)
+    }
+
+    @MainActor
+    func testClubRejectsPendingAndOtherAccountMemberships() async {
+        let service = TestClubService()
+        let store = ClubStore(accountID: service.accountID) { service }
+        service.entries = [service.entry(status: .pending)]
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        service.entries = [service.entry(accountID: UUID())]
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertEqual(store.memberships, [])
+    }
+
+    @MainActor
+    func testClubRejectsDuplicateOrMismatchedClubIDs() async {
+        let service = TestClubService()
+        let entry = service.entry()
+        let store = ClubStore(accountID: service.accountID) { service }
+        service.entries = [entry, entry]
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        service.entries = [ClubMembership(membership: entry.membership, club: service.entry().club)]
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+    }
+
+    func testClubCommandValidatesAndEncodesContract() throws {
+        let requestID = UUID()
+        let command = try CreateClubCommand(name: " 우리 리그\n", description: " 소개 ", requestID: requestID)
+        let encoded = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(command)) as? [String: Any])
+        let payload = try XCTUnwrap(encoded["payload"] as? [String: Any])
+        XCTAssertEqual(encoded["operation"] as? String, "create_club")
+        XCTAssertEqual(encoded["request_id"] as? String, requestID.uuidString)
+        XCTAssertEqual(payload["name"] as? String, "우리 리그")
+        XCTAssertEqual(payload["description"] as? String, "소개")
+        XCTAssertNil(payload["owner_account_id"])
+        XCTAssertEqual(try CreateClubCommand(name: String(repeating: "가", count: 100), description: "").payload.name.unicodeScalars.count, 100)
+        XCTAssertThrowsError(try CreateClubCommand(name: " \n ", description: "")) { _ in }
+        XCTAssertThrowsError(try CreateClubCommand(name: String(repeating: "가", count: 101), description: "")) { _ in }
+        XCTAssertThrowsError(try CreateClubCommand(name: String(repeating: "e\u{301}", count: 51), description: "")) { _ in }
+    }
+
+    func testClubMembershipDecodesJoinedResponse() throws {
+        let accountID = UUID()
+        let clubID = UUID()
+        let json = """
+        {"id":"\(UUID())","club_id":"\(clubID)","account_id":"\(accountID)","role":"owner","status":"approved",
+        "club":{"id":"\(clubID)","name":"테니스","description":"소개","owner_account_id":"\(accountID)","status":"active","legacy_id":null}}
+        """
+        let entry = try JSONDecoder().decode(ClubMembership.self, from: Data(json.utf8))
+        XCTAssertEqual(entry.id, clubID)
+        XCTAssertEqual(entry.membership.accountID, accountID)
+        XCTAssertEqual(entry.canManage, true)
+        XCTAssertThrowsError(try JSONDecoder().decode(ClubMembership.self, from: Data(json.replacingOccurrences(of: "\"club\":{", with: "\"hidden_club\":{").utf8))) { _ in }
+    }
+
+    @MainActor
+    func testClubCreationRequiresAcknowledgedOwnerMembership() async {
+        let service = TestClubService()
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        service.onCreate = {
+            XCTAssertNil(store.selectedMembership)
+            XCTAssertEqual(store.isBusy, true)
+        }
+        let success = await store.create(name: " 동호회 ", description: "소개")
+        XCTAssertEqual(success, true)
+        XCTAssertEqual(store.selectedMembership?.club.name, "동호회")
+        XCTAssertEqual(store.selectedMembership?.canManage, true)
+        XCTAssertEqual(service.fetchCount, 2)
+        XCTAssertEqual(store.isBusy, false)
+    }
+
+    @MainActor
+    func testClubInvalidNameDoesNotCallServer() async {
+        let service = TestClubService()
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        let success = await store.create(name: " ", description: "")
+        XCTAssertEqual(success, false)
+        XCTAssertEqual(service.commands.count, 0)
+        XCTAssertTrue(store.errorMessage != nil)
+    }
+
+    @MainActor
+    func testClubCreateFailureReusesRequestID() async {
+        let service = TestClubService()
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        service.createShouldFail = true
+        let failed = await store.create(name: "동호회", description: "소개")
+        service.createShouldFail = false
+        let success = await store.create(name: " 동호회 ", description: "소개")
+        XCTAssertEqual(failed, false)
+        XCTAssertEqual(success, true)
+        XCTAssertEqual(service.commands.count, 2)
+        XCTAssertEqual(service.commands[0], service.commands[1])
+    }
+
+    @MainActor
+    func testClubChangedPayloadUsesNewRequestID() async {
+        let service = TestClubService()
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        service.createShouldFail = true
+        _ = await store.create(name: "동호회", description: "이전")
+        _ = await store.create(name: "동호회", description: "변경")
+        XCTAssertNotEqual(service.commands[0].requestID, service.commands[1].requestID)
+    }
+
+    @MainActor
+    func testClubReadFailureAfterCreateKeepsRetryID() async {
+        let service = TestClubService()
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        service.onCreate = { service.fetchShouldFail = true }
+        let failed = await store.create(name: "동호회", description: "")
+        XCTAssertEqual(failed, false)
+        XCTAssertNil(store.selectedMembership)
+        service.onCreate = nil
+        service.fetchShouldFail = false
+        let success = await store.create(name: "동호회", description: "")
+        XCTAssertEqual(success, true)
+        XCTAssertEqual(service.commands[0].requestID, service.commands[1].requestID)
+        XCTAssertEqual(service.entries.count, 1)
+    }
+
+    @MainActor
+    func testClubCreateRejectsUnexpectedOwner() async {
+        let service = TestClubService()
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        service.returnWrongOwner = true
+        let success = await store.create(name: "동호회", description: "")
+        XCTAssertEqual(success, false)
+        XCTAssertNil(store.selectedMembership)
+    }
+
+    @MainActor
+    func testClubCreationRejectsMissingOwnerMembership() async {
+        let service = TestClubService()
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        service.omitCreatedMembership = true
+        let success = await store.create(name: "동호회", description: "")
+        XCTAssertEqual(success, false)
+        XCTAssertNil(store.selectedMembership)
+        XCTAssertTrue(store.errorMessage != nil)
+    }
+
+    @MainActor
+    func testCancelledClubLoadDoesNotPublishMemberships() async {
+        let service = TestClubService()
+        service.entries = [service.entry()]
+        service.onFetch = { withUnsafeCurrentTask { $0?.cancel() } }
+        let store = ClubStore(accountID: service.accountID) { service }
+        let task = Task { await store.load() }
+        await task.value
+        XCTAssertEqual(store.memberships, [])
+        XCTAssertEqual(store.isBusy, false)
+        service.onFetch = nil
+        await store.load()
+        XCTAssertEqual(store.memberships, service.entries)
+    }
+
+    @MainActor
+    func testClubCreateSuppressesConcurrentCommands() async {
+        let service = TestClubService()
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        service.onCreate = {
+            let duplicate = await store.create(name: "중복", description: "")
+            XCTAssertEqual(duplicate, false)
+            await store.load()
+        }
+        _ = await store.create(name: "동호회", description: "")
+        service.onCreate = nil
+        XCTAssertEqual(service.commands.count, 1)
+        XCTAssertEqual(service.fetchCount, 2)
+    }
+
+    @MainActor
+    func testCancelledClubCreationDoesNotSelectClub() async {
+        let service = TestClubService()
+        let store = ClubStore(accountID: service.accountID) { service }
+        await store.load()
+        service.onCreate = { withUnsafeCurrentTask { $0?.cancel() } }
+        let task = Task { await store.create(name: "동호회", description: "") }
+        let success = await task.value
+        service.onCreate = nil
+        XCTAssertEqual(success, false)
+        XCTAssertNil(store.selectedMembership)
+        XCTAssertEqual(store.isBusy, false)
+    }
+
+    @MainActor
     func testMissingProfileRequiresNickname() async {
         let service = TestProfileService()
         let store = ProfileStore(accountID: service.accountID) { service }
@@ -534,6 +806,47 @@ final class OurLeagueTests: XCTestCase {
         XCTAssertEqual(encoded["legacy_player_id"] as? Int, 1)
     }
 
+}
+
+@MainActor
+private final class TestClubService: LeagueClubService {
+    let accountID = UUID()
+    var entries: [ClubMembership] = []
+    var commands: [CreateClubCommand] = []
+    var fetchCount = 0
+    var fetchShouldFail = false
+    var createShouldFail = false
+    var returnWrongOwner = false
+    var omitCreatedMembership = false
+    var onFetch: (() -> Void)?
+    var onCreate: (() async -> Void)?
+    private var receipts: [UUID: Club] = [:]
+
+    func entry(role: MembershipRole = .owner, status: MembershipStatus = .approved, accountID: UUID? = nil) -> ClubMembership {
+        let actor = accountID ?? self.accountID
+        let club = Club(id: UUID(), name: "테니스", description: "소개", ownerAccountID: role == .owner ? actor : UUID(), status: .active, legacyID: nil)
+        return ClubMembership(membership: Membership(id: UUID(), clubID: club.id, accountID: actor, role: role, status: status), club: club)
+    }
+
+    func fetchMemberships(accountID: UUID) async throws -> [ClubMembership] {
+        fetchCount += 1
+        onFetch?()
+        if fetchShouldFail { throw ClubError.invalidMembership }
+        return entries
+    }
+
+    func createClub(_ command: CreateClubCommand, accountID: UUID) async throws -> Club {
+        commands.append(command)
+        await onCreate?()
+        if createShouldFail { throw ClubError.unexpectedOwner }
+        if let club = receipts[command.requestID] { return club }
+        let club = Club(id: UUID(), name: command.payload.name, description: command.payload.description, ownerAccountID: returnWrongOwner ? UUID() : accountID, status: .active, legacyID: nil)
+        receipts[command.requestID] = club
+        if !omitCreatedMembership {
+            entries.append(ClubMembership(membership: Membership(id: UUID(), clubID: club.id, accountID: accountID, role: .owner, status: .approved), club: club))
+        }
+        return club
+    }
 }
 
 @MainActor
