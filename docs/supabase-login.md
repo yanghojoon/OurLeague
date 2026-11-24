@@ -30,6 +30,6 @@
 - 로컬에서는 Foundation·Combine·CryptoKit·Security 기반 계약 검사 28개가 통과했다(기존 모델·설정 검사 14개 + 인증·nonce 검사 14개). Xcode 프로젝트와 entitlement 문법, 인증 소스 5개의 타깃 포함 여부 및 Debug/Release 서명 설정 검사도 통과했다.
 - 초기 CLI 경로가 Command Line Tools로 선택되어 실제 Xcode를 확인하지 못했다. 2026-11-24에는 Xcode 26.2에서 앱·SDK·테스트 타깃을 빌드하고 XCTest 63개와 로그인 UI 검사 1개를 통과했다. [실제 검증 결과](xcode-verification.md)를 참고한다. Apple 계정 인증 성공과 인증된 DB 왕복까지 확인한 것은 아니다.
 - 외부 설정 후 첫 로그인/재실행 복구/취소/오프라인 복구 재시도/로그아웃/재로그인을 실기기에서 확인하고 Supabase Auth Users와 대조한다. 서버가 토큰을 검증하며 화면 상태만으로 DB 권한을 부여하지 않는다.
-- 프로필 확인 후 소속 동호회 조회·생성·선택 및 [참가자 명단 관리](supabase-roster.md)가 가능하다. 가입 승인·모임 연동·계정 삭제는 아직 구현하지 않았다. 따라서 PRD FR-01·FR-02 전체나 App Store 배포 준비가 완료된 것은 아니다. 최초 로그인만으로 기존 클럽 운영자나 명단 참가자에 자동 연결하지 않는다.
+- 프로필 확인 후 소속 동호회 조회·생성·선택, [참가자 명단 관리](supabase-roster.md), [회원 초대·가입 승인·명단 연결](supabase-membership.md)이 가능하다. 동호회 수정·탈퇴·인계, 모임 연동·계정 삭제는 아직 구현하지 않았다. 따라서 PRD FR-01·FR-02 전체나 App Store 배포 준비가 완료된 것은 아니다. 최초 로그인만으로 기존 클럽 운영자나 명단 참가자에 자동 연결하지 않는다.
 
 주요 파일: `OurLeague/Auth/AuthSession.swift`, `AuthStore.swift`, `SupabaseAuthService.swift`, `AppleSignInNonce.swift`, `LoginView.swift`, `OurLeague/Splash/SplashView.swift`.
