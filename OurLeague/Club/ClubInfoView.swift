@@ -22,9 +22,16 @@ struct ClubInfoView: View {
                 LabeledContent("동호회 상태", value: statusText)
             }
             Section {
-                Label("모임과 명단 연결 준비 중", systemImage: "calendar")
+                NavigationLink {
+                    ClubRosterView(membership: membership)
+                        .id(membership.id)
+                } label: {
+                    Label("참가자 명단", systemImage: "person.3")
+                }
+                .accessibilityIdentifier("clubRosterLink")
+                Label("모임 연결 준비 중", systemImage: "calendar")
                     .foregroundStyle(.secondary)
-                Text("아직 이 동호회의 모임·명단·경기 기록 기능은 연결되지 않았습니다.")
+                Text("아직 이 동호회의 모임·경기 기록 기능은 연결되지 않았습니다.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
             Section {

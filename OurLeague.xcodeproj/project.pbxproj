@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E6E9C0012FCA000000000011 /* ClubRosterStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E9C0012FCA000000000001 /* ClubRosterStore.swift */; };
+		E6E9C0012FCA000000000012 /* SupabaseRosterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E9C0012FCA000000000002 /* SupabaseRosterService.swift */; };
+		E6E9C0012FCA000000000013 /* ClubRosterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E9C0012FCA000000000003 /* ClubRosterView.swift */; };
 		D6E9C0012FCA000000000011 /* ClubStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E9C0012FCA000000000001 /* ClubStore.swift */; };
 		D6E9C0012FCA000000000012 /* SupabaseClubService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E9C0012FCA000000000002 /* SupabaseClubService.swift */; };
 		D6E9C0012FCA000000000013 /* ClubListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E9C0012FCA000000000003 /* ClubListView.swift */; };
@@ -61,6 +64,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		E6E9C0012FCA000000000001 /* ClubRosterStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClubRosterStore.swift; sourceTree = "<group>"; };
+		E6E9C0012FCA000000000002 /* SupabaseRosterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseRosterService.swift; sourceTree = "<group>"; };
+		E6E9C0012FCA000000000003 /* ClubRosterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClubRosterView.swift; sourceTree = "<group>"; };
 		D6E9C0012FCA000000000001 /* ClubStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClubStore.swift; sourceTree = "<group>"; };
 		D6E9C0012FCA000000000002 /* SupabaseClubService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClubService.swift; sourceTree = "<group>"; };
 		D6E9C0012FCA000000000003 /* ClubListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClubListView.swift; sourceTree = "<group>"; };
@@ -175,6 +181,9 @@
 		DE7757F32D54D71600E2255D /* Club */ = {
 			isa = PBXGroup;
 			children = (
+				E6E9C0012FCA000000000001 /* ClubRosterStore.swift */,
+				E6E9C0012FCA000000000002 /* SupabaseRosterService.swift */,
+				E6E9C0012FCA000000000003 /* ClubRosterView.swift */,
 				D6E9C0012FCA000000000001 /* ClubStore.swift */,
 				D6E9C0012FCA000000000002 /* SupabaseClubService.swift */,
 				D6E9C0012FCA000000000003 /* ClubListView.swift */,
@@ -470,6 +479,9 @@
 				D6E9C0012FCA000000000011 /* ClubStore.swift in Sources */,
 				D6E9C0012FCA000000000012 /* SupabaseClubService.swift in Sources */,
 				D6E9C0012FCA000000000013 /* ClubListView.swift in Sources */,
+				E6E9C0012FCA000000000011 /* ClubRosterStore.swift in Sources */,
+				E6E9C0012FCA000000000012 /* SupabaseRosterService.swift in Sources */,
+				E6E9C0012FCA000000000013 /* ClubRosterView.swift in Sources */,
 				DE7A18912B29E617008E5CC3 /* InformationInputView.swift in Sources */,
 				DE2FFD2F2EA1CAEF00674784 /* Supabase.swift in Sources */,
 				DE7757FE2D54F4FB00E2255D /* CalendarView.swift in Sources */,

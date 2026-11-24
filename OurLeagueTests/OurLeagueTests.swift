@@ -10,6 +10,244 @@ import XCTest
 
 final class OurLeagueTests: XCTestCase {
 
+    func testRosterCommandEncodesNullLabelWithoutAccountLink() throws {
+        let command = try SaveParticipantCommand(clubID: UUID(), participantID: UUID(), displayName: " 선수 ", label: " \n", isActive: false)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(command)) as? [String: Any])
+        let payload = try XCTUnwrap(json["payload"] as? [String: Any])
+        XCTAssertEqual(json["operation"] as? String, "save_participant")
+        XCTAssertEqual(json["request_id"] as? String, command.requestID.uuidString)
+        XCTAssertEqual(payload["display_name"] as? String, "선수")
+        XCTAssertTrue(payload["label"] is NSNull)
+        XCTAssertEqual(payload["is_active"] as? Bool, false)
+        XCTAssertNotNil(payload["club_id"])
+        XCTAssertNotNil(payload["participant_id"])
+        XCTAssertNil(payload["account_id"])
+    }
+
+    func testRosterNameMatchesDatabaseScalarLimits() throws {
+        let clubID = UUID()
+        XCTAssertNoThrow(try SaveParticipantCommand(clubID: clubID, participantID: nil, displayName: "가", label: "", isActive: true))
+        XCTAssertNoThrow(try SaveParticipantCommand(clubID: clubID, participantID: nil, displayName: String(repeating: "가", count: 40), label: "", isActive: true))
+        for name in [" \n", String(repeating: "가", count: 41), String(repeating: "e\u{301}", count: 21)] {
+            XCTAssertThrowsError(try SaveParticipantCommand(clubID: clubID, participantID: nil, displayName: name, label: "", isActive: true))
+        }
+        XCTAssertThrowsError(try SaveParticipantCommand(clubID: clubID, participantID: nil, displayName: "선수", label: "", isActive: false))
+    }
+
+    func testRosterCreationOmitsUpdateOnlyFields() throws {
+        let command = try SaveParticipantCommand(clubID: UUID(), participantID: nil, displayName: "선수", label: " 오전반 ", isActive: true)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(command)) as? [String: Any])
+        let payload = try XCTUnwrap(json["payload"] as? [String: Any])
+        XCTAssertEqual(payload["label"] as? String, "오전반")
+        XCTAssertNil(payload["participant_id"])
+        XCTAssertNil(payload["is_active"])
+        XCTAssertNil(payload["account_id"])
+    }
+
+    @MainActor
+    func testRosterLoadsEmptyAndInactiveRows() async {
+        let service = TestRosterService()
+        let store = service.store()
+        await store.load()
+        XCTAssertEqual(store.state, .loaded)
+        XCTAssertTrue(store.participants.isEmpty)
+        service.rows = [service.row(name: "동명이인"), service.row(name: "동명이인", active: false)]
+        await store.load()
+        XCTAssertEqual(store.participants.count, 2)
+        XCTAssertEqual(store.participants[1].isActive, false)
+    }
+
+    @MainActor
+    func testRosterRefreshFailureClearsStaleRowsAndCanRetry() async {
+        let service = TestRosterService()
+        service.rows = [service.row()]
+        let store = service.store()
+        await store.load()
+        service.fetchFails = true
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertTrue(store.participants.isEmpty)
+        service.fetchFails = false
+        await store.load()
+        XCTAssertEqual(store.participants, service.rows)
+        XCTAssertNil(store.errorMessage)
+    }
+
+    @MainActor
+    func testRosterRejectsForeignAndDuplicateRows() async {
+        let service = TestRosterService()
+        let store = service.store()
+        service.rows = [service.row(clubID: UUID())]
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        let row = service.row()
+        service.rows = [row, row]
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertTrue(store.participants.isEmpty)
+    }
+
+    @MainActor
+    func testRosterMemberCanReadButCannotSave() async {
+        let service = TestRosterService()
+        service.rows = [service.row()]
+        let store = service.store(role: .member)
+        await store.load()
+        XCTAssertEqual(store.participants.count, 1)
+        XCTAssertFalse(store.canManage)
+        let success = await store.save(participantID: nil, displayName: "선수", label: "", isActive: true)
+        XCTAssertFalse(success)
+        XCTAssertTrue(service.commands.isEmpty)
+    }
+
+    @MainActor
+    func testRosterPendingMembershipCannotRead() async {
+        let service = TestRosterService()
+        let store = service.store(role: .member, status: .pending)
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertEqual(service.fetchCount, 0)
+    }
+
+    @MainActor
+    func testRosterClosedOwnerCannotSave() async {
+        let service = TestRosterService()
+        let store = service.store(clubStatus: .closed)
+        await store.load()
+        XCTAssertFalse(store.canManage)
+        let success = await store.save(participantID: nil, displayName: "선수", label: "", isActive: true)
+        XCTAssertFalse(success)
+        XCTAssertTrue(service.commands.isEmpty)
+    }
+
+    @MainActor
+    func testRosterCreationRequiresRefetchBeforeSuccess() async {
+        let service = TestRosterService()
+        let store = service.store()
+        await store.load()
+        service.onSave = {
+            XCTAssertTrue(store.participants.isEmpty)
+            XCTAssertTrue(store.isBusy)
+        }
+        let success = await store.save(participantID: nil, displayName: " 선수 ", label: " A ", isActive: true)
+        XCTAssertTrue(success)
+        XCTAssertEqual(store.participants.first?.displayName, "선수")
+        XCTAssertEqual(store.participants.first?.label, "A")
+        XCTAssertNil(store.participants.first?.accountID)
+        XCTAssertEqual(service.fetchCount, 2)
+    }
+
+    @MainActor
+    func testRosterEditPreservesIdentityAndAccountWhileDeactivating() async {
+        let service = TestRosterService()
+        let original = service.row(accountID: UUID())
+        service.rows = [original]
+        let store = service.store()
+        await store.load()
+        let success = await store.save(participantID: original.id, displayName: "수정", label: "", isActive: false)
+        XCTAssertTrue(success)
+        XCTAssertEqual(store.participants.first?.id, original.id)
+        XCTAssertEqual(store.participants.first?.accountID, original.accountID)
+        XCTAssertEqual(store.participants.first?.isActive, false)
+        let restored = await store.save(participantID: original.id, displayName: "수정", label: "복귀", isActive: true)
+        XCTAssertTrue(restored)
+        XCTAssertEqual(store.participants.first?.isActive, true)
+    }
+
+    @MainActor
+    func testRosterRejectsUnknownEditAndInvalidName() async {
+        let service = TestRosterService()
+        let store = service.store()
+        await store.load()
+        let unknown = await store.save(participantID: UUID(), displayName: "선수", label: "", isActive: true)
+        let invalid = await store.save(participantID: nil, displayName: " ", label: "", isActive: true)
+        XCTAssertFalse(unknown)
+        XCTAssertFalse(invalid)
+        XCTAssertTrue(service.commands.isEmpty)
+    }
+
+    @MainActor
+    func testRosterRetryAfterLostResponseReusesRequestWithoutDuplicate() async {
+        let service = TestRosterService()
+        let store = service.store()
+        await store.load()
+        service.fetchFails = true
+        let failed = await store.save(participantID: nil, displayName: "선수", label: "A", isActive: true)
+        XCTAssertFalse(failed)
+        XCTAssertTrue(store.participants.isEmpty)
+        service.fetchFails = false
+        let success = await store.save(participantID: nil, displayName: " 선수 ", label: " A ", isActive: true)
+        XCTAssertTrue(success)
+        XCTAssertEqual(service.commands[0], service.commands[1])
+        XCTAssertEqual(service.rows.count, 1)
+    }
+
+    @MainActor
+    func testRosterChangedPayloadUsesDifferentRequest() async {
+        let service = TestRosterService()
+        let store = service.store()
+        await store.load()
+        service.saveFails = true
+        _ = await store.save(participantID: nil, displayName: "선수", label: "A", isActive: true)
+        _ = await store.save(participantID: nil, displayName: "선수", label: "B", isActive: true)
+        XCTAssertNotEqual(service.commands[0].requestID, service.commands[1].requestID)
+    }
+
+    @MainActor
+    func testRosterMissingAcknowledgedRowIsNotSuccess() async {
+        let service = TestRosterService()
+        let store = service.store()
+        await store.load()
+        service.omitSavedRow = true
+        let success = await store.save(participantID: nil, displayName: "선수", label: "", isActive: true)
+        XCTAssertFalse(success)
+        XCTAssertNotNil(store.errorMessage)
+    }
+
+    @MainActor
+    func testRosterWrongEditReceiptIsRejected() async {
+        let service = TestRosterService()
+        let row = service.row()
+        service.rows = [row]
+        let store = service.store()
+        await store.load()
+        service.wrongReceipt = true
+        let success = await store.save(participantID: row.id, displayName: "수정", label: "", isActive: true)
+        XCTAssertFalse(success)
+        XCTAssertEqual(service.fetchCount, 1)
+    }
+
+    @MainActor
+    func testRosterCancellationDoesNotPublishSavedRows() async {
+        let service = TestRosterService()
+        let store = service.store()
+        await store.load()
+        service.onSave = { withUnsafeCurrentTask { $0?.cancel() } }
+        let task = Task { await store.save(participantID: nil, displayName: "선수", label: "", isActive: true) }
+        let success = await task.value
+        service.onSave = nil
+        XCTAssertFalse(success)
+        XCTAssertTrue(store.participants.isEmpty)
+        XCTAssertFalse(store.isBusy)
+    }
+
+    @MainActor
+    func testRosterSuppressesConcurrentWritesAndReads() async {
+        let service = TestRosterService()
+        let store = service.store()
+        await store.load()
+        service.onSave = {
+            let duplicate = await store.save(participantID: nil, displayName: "중복", label: "", isActive: true)
+            XCTAssertFalse(duplicate)
+            await store.load()
+        }
+        let success = await store.save(participantID: nil, displayName: "선수", label: "", isActive: true)
+        service.onSave = nil
+        XCTAssertTrue(success)
+        XCTAssertEqual(service.commands.count, 1)
+        XCTAssertEqual(service.fetchCount, 2)
+    }
+
     @MainActor
     func testClubEmptyListIsNotAnError() async {
         let service = TestClubService()
@@ -806,6 +1044,60 @@ final class OurLeagueTests: XCTestCase {
         XCTAssertEqual(encoded["legacy_player_id"] as? Int, 1)
     }
 
+}
+
+@MainActor
+private final class TestRosterService: LeagueRosterService {
+    let accountID = UUID()
+    let clubID = UUID()
+    var rows: [ClubParticipant] = []
+    var commands: [SaveParticipantCommand] = []
+    var fetchCount = 0
+    var fetchFails = false
+    var saveFails = false
+    var omitSavedRow = false
+    var wrongReceipt = false
+    var onSave: (() async -> Void)?
+    private var receipts: [UUID: UUID] = [:]
+
+    func store(role: MembershipRole = .owner, status: MembershipStatus = .approved, clubStatus: ClubStatus = .active) -> ClubRosterStore {
+        let club = Club(id: clubID, name: "동호회", description: "", ownerAccountID: accountID, status: clubStatus, legacyID: nil)
+        let membership = Membership(id: UUID(), clubID: clubID, accountID: accountID, role: role, status: status)
+        return ClubRosterStore(membership: ClubMembership(membership: membership, club: club)) { self }
+    }
+
+    func row(name: String = "선수", active: Bool = true, clubID: UUID? = nil, accountID: UUID? = nil) -> ClubParticipant {
+        ClubParticipant(id: UUID(), clubID: clubID ?? self.clubID, accountID: accountID, displayName: name, label: "기존", isActive: active, legacyPlayerID: nil)
+    }
+
+    func fetchParticipants(clubID: UUID, accountID: UUID) async throws -> [ClubParticipant] {
+        XCTAssertEqual(clubID, self.clubID)
+        XCTAssertEqual(accountID, self.accountID)
+        fetchCount += 1
+        if fetchFails { throw RosterError.invalidResponse }
+        return rows
+    }
+
+    func saveParticipant(_ command: SaveParticipantCommand, accountID: UUID) async throws -> UUID {
+        XCTAssertEqual(accountID, self.accountID)
+        XCTAssertEqual(command.payload.clubID, clubID)
+        commands.append(command)
+        await onSave?()
+        if saveFails { throw RosterError.invalidResponse }
+        if let saved = receipts[command.requestID] { return saved }
+        let payload = command.payload
+        let savedID = payload.participantID ?? UUID()
+        let old = rows.first { $0.id == savedID }
+        let updated = ClubParticipant(id: savedID, clubID: payload.clubID, accountID: old?.accountID,
+                                      displayName: payload.displayName, label: payload.label,
+                                      isActive: payload.isActive ?? true, legacyPlayerID: old?.legacyPlayerID)
+        if !omitSavedRow {
+            rows.removeAll { $0.id == savedID }
+            rows.append(updated)
+        }
+        receipts[command.requestID] = savedID
+        return wrongReceipt ? UUID() : savedID
+    }
 }
 
 @MainActor
