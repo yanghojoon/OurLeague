@@ -10,6 +10,348 @@ import XCTest
 
 final class OurLeagueTests: XCTestCase {
 
+    func testMembershipTokenValidationAndRedaction() throws {
+        let token = String(repeating: "ab", count: 32)
+        let command = try MembershipCommand.request(token: " \(token)\n")
+        XCTAssertEqual(command.payload.token, token)
+        XCTAssertFalse(String(reflecting: command).contains(token))
+        for invalid in ["", String(token.dropLast()), String(repeating: "A", count: 64), String(repeating: "가", count: 64), "https://example.com/\(token)"] {
+            XCTAssertThrowsError(try MembershipCommand.request(token: invalid))
+        }
+    }
+
+    func testMembershipRequestAndLinkPayloadsAreSeparate() throws {
+        let request = try MembershipCommand.request(token: String(repeating: "a", count: 64))
+        let requestJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
+        let requestPayload = try XCTUnwrap(requestJSON["payload"] as? [String: Any])
+        XCTAssertEqual(requestJSON["operation"] as? String, "request_membership")
+        XCTAssertEqual(Set(requestPayload.keys), ["token"])
+        let link = MembershipCommand(operation: .link, payload: .init(clubID: UUID(), participantID: UUID(), accountID: UUID()))
+        let linkJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(link)) as? [String: Any])
+        let linkPayload = try XCTUnwrap(linkJSON["payload"] as? [String: Any])
+        XCTAssertEqual(linkJSON["operation"] as? String, "save_participant")
+        XCTAssertEqual(Set(linkPayload.keys), ["club_id", "participant_id", "account_id"])
+        XCTAssertNotNil(linkJSON["request_id"])
+    }
+
+    func testMembershipInvitationExplicitlyUsesNullSession() throws {
+        let params = IssueMembershipInvitation(clubID: UUID(), expiresAt: "2026-12-01T00:00:00Z")
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(params)) as? [String: Any])
+        XCTAssertTrue(json["target_session"] is NSNull)
+        XCTAssertNotNil(json["target_club"])
+        XCTAssertNotNil(json["expires_at"])
+    }
+
+    func testMembershipInvitationDecodingAndExpiration() throws {
+        let token = String(repeating: "a", count: 64)
+        let json = """
+        {"invitation_id":"\(UUID())","token":"\(token)","expires_at":"2026-12-01T00:00:00.123+00:00"}
+        """
+        let invitation = try JSONDecoder().decode(MembershipInvitation.self, from: Data(json.utf8))
+        let expiration = try XCTUnwrap(invitation.expirationDate)
+        XCTAssertTrue(invitation.isUsable(at: expiration.addingTimeInterval(-1)))
+        XCTAssertFalse(invitation.isUsable(at: expiration))
+        XCTAssertFalse(String(reflecting: invitation).contains(token))
+        let malformed = MembershipInvitation(id: UUID(), token: token, expiresAt: "invalid")
+        XCTAssertFalse(malformed.isUsable(at: Date()))
+    }
+
+    @MainActor
+    func testMembershipRequestShowsPendingWithoutClubJoin() async {
+        let service = TestMembershipService()
+        service.members = [service.member(status: .pending)]
+        let store = service.requestStore()
+        await store.load()
+        XCTAssertEqual(store.state, .loaded)
+        XCTAssertEqual(store.memberships.first?.status, .pending)
+    }
+
+    @MainActor
+    func testMembershipRequestRejectsForeignAndDuplicateMemberships() async {
+        let service = TestMembershipService()
+        let store = service.requestStore()
+        service.members = [service.member(accountID: UUID())]
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        let entry = service.member()
+        service.members = [entry, entry]
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertTrue(store.memberships.isEmpty)
+    }
+
+    @MainActor
+    func testMembershipRequestRequiresAcknowledgedOwnMembership() async {
+        let service = TestMembershipService()
+        let store = service.requestStore()
+        await store.load()
+        let success = await store.request(token: service.token)
+        XCTAssertTrue(success)
+        XCTAssertEqual(store.memberships.first?.status, .pending)
+        XCTAssertNotNil(store.successMessage)
+        XCTAssertEqual(service.ownFetchCount, 2)
+    }
+
+    @MainActor
+    func testMembershipRequestAlreadyApprovedDoesNotCreateDuplicate() async {
+        let service = TestMembershipService()
+        service.members = [service.member()]
+        let store = service.requestStore()
+        await store.load()
+        _ = await store.request(token: service.token)
+        _ = await store.request(token: service.token)
+        XCTAssertEqual(service.members.count, 1)
+        XCTAssertEqual(store.memberships.first?.status, .approved)
+        XCTAssertTrue(store.successMessage?.contains("이미 승인") == true)
+    }
+
+    @MainActor
+    func testMembershipRequestRetryAfterCommittedReadFailureReusesID() async {
+        let service = TestMembershipService()
+        let store = service.requestStore()
+        await store.load()
+        service.fetchFails = true
+        let failed = await store.request(token: service.token)
+        XCTAssertFalse(failed)
+        XCTAssertTrue(store.memberships.isEmpty)
+        service.fetchFails = false
+        let success = await store.request(token: service.token)
+        XCTAssertTrue(success)
+        XCTAssertEqual(service.commands[0], service.commands[1])
+        XCTAssertEqual(service.members.count, 1)
+    }
+
+    @MainActor
+    func testMembershipChangedTokenUsesNewRequestAndInvalidTokenDoesNotCall() async {
+        let service = TestMembershipService()
+        let store = service.requestStore()
+        await store.load()
+        service.executeFails = true
+        _ = await store.request(token: service.token)
+        _ = await store.request(token: String(repeating: "b", count: 64))
+        _ = await store.request(token: "invalid")
+        XCTAssertEqual(service.commands.count, 2)
+        XCTAssertNotEqual(service.commands[0].requestID, service.commands[1].requestID)
+    }
+
+    @MainActor
+    func testMembershipRequestRejectsWrongReceiptAndCancellation() async {
+        let service = TestMembershipService()
+        let store = service.requestStore()
+        await store.load()
+        service.wrongReceipt = true
+        let wrong = await store.request(token: service.token)
+        XCTAssertFalse(wrong)
+        XCTAssertNil(store.successMessage)
+        service.wrongReceipt = false
+        service.onExecute = { withUnsafeCurrentTask { $0?.cancel() } }
+        let task = Task { await store.request(token: service.token) }
+        let cancelled = await task.value
+        service.onExecute = nil
+        XCTAssertFalse(cancelled)
+        XCTAssertTrue(store.memberships.isEmpty)
+        XCTAssertFalse(store.isBusy)
+    }
+
+    @MainActor
+    func testMembershipMemberCannotManageOrIssueInvitation() async {
+        let service = TestMembershipService()
+        let store = service.managementStore(role: .member)
+        await store.load()
+        await store.issueInvitation()
+        let approved = await store.approve(membershipID: UUID())
+        XCTAssertFalse(approved)
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertEqual(service.clubFetchCount, 0)
+        XCTAssertEqual(service.issueCount, 0)
+    }
+
+    @MainActor
+    func testMembershipOwnerRejectsForeignClubAndLostOwnerRole() async {
+        let service = TestMembershipService()
+        let store = service.managementStore()
+        service.members.append(service.member(clubID: UUID()))
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        service.members = [service.member(role: .member)]
+        await store.load()
+        XCTAssertEqual(store.state, .unavailable)
+        XCTAssertTrue(store.memberships.isEmpty)
+    }
+
+    @MainActor
+    func testMembershipIssuanceValidatesExpirationAndDropsPreviousSecretOnFailure() async {
+        let service = TestMembershipService()
+        let store = service.managementStore()
+        await store.load()
+        await store.issueInvitation()
+        XCTAssertEqual(store.invitation?.token, service.token)
+        XCTAssertEqual(service.issuedExpiration?.timeIntervalSinceNow ?? 0, 86400, accuracy: 5)
+        service.issueFails = true
+        await store.issueInvitation()
+        XCTAssertNil(store.invitation)
+        XCTAssertNotNil(store.errorMessage)
+    }
+
+    @MainActor
+    func testMembershipIssuanceRejectsExpiredOrMalformedCode() async {
+        let service = TestMembershipService()
+        let store = service.managementStore()
+        await store.load()
+        service.badInvitation = true
+        await store.issueInvitation()
+        XCTAssertNil(store.invitation)
+    }
+
+    @MainActor
+    func testMembershipApprovalDoesNotAutomaticallyLinkParticipant() async {
+        let service = TestMembershipService()
+        let store = service.managementStore()
+        let pending = service.member(status: .pending, accountID: UUID())
+        service.members.append(pending)
+        service.rows = [service.row()]
+        await store.load()
+        let success = await store.approve(membershipID: pending.id)
+        XCTAssertTrue(success)
+        XCTAssertEqual(store.memberships.first { $0.id == pending.id }?.status, .approved)
+        XCTAssertNil(store.participants.first?.accountID)
+        XCTAssertEqual(service.commands.first?.operation, .approve)
+    }
+
+    @MainActor
+    func testMembershipApprovalRetryUsesSameIDAfterReadFailure() async {
+        let service = TestMembershipService()
+        let store = service.managementStore()
+        let pending = service.member(status: .pending, accountID: UUID())
+        service.members.append(pending)
+        await store.load()
+        service.fetchFails = true
+        let failed = await store.approve(membershipID: pending.id)
+        XCTAssertFalse(failed)
+        XCTAssertEqual(store.memberships.first { $0.id == pending.id }?.status, .pending)
+        service.fetchFails = false
+        let success = await store.approve(membershipID: pending.id)
+        XCTAssertTrue(success)
+        XCTAssertEqual(service.commands[0], service.commands[1])
+    }
+
+    @MainActor
+    func testMembershipCannotApproveUnknownOrInactiveMembership() async {
+        let service = TestMembershipService()
+        let store = service.managementStore()
+        let inactive = service.member(status: .inactive, accountID: UUID())
+        service.members.append(inactive)
+        await store.load()
+        let missing = await store.approve(membershipID: UUID())
+        let rejected = await store.approve(membershipID: inactive.id)
+        XCTAssertFalse(missing)
+        XCTAssertFalse(rejected)
+        XCTAssertTrue(service.commands.isEmpty)
+    }
+
+    @MainActor
+    func testMembershipLinkPreservesParticipantIdentityAndName() async {
+        let service = TestMembershipService()
+        let store = service.managementStore()
+        let member = service.member(accountID: UUID())
+        let row = service.row()
+        service.members.append(member)
+        service.rows = [row]
+        await store.load()
+        let success = await store.link(accountID: member.accountID, participantID: row.id)
+        XCTAssertTrue(success)
+        XCTAssertEqual(store.participants.first?.id, row.id)
+        XCTAssertEqual(store.participants.first?.displayName, row.displayName)
+        XCTAssertEqual(store.participants.first?.accountID, member.accountID)
+        XCTAssertNil(service.commands.first?.payload.token)
+    }
+
+    @MainActor
+    func testMembershipLinkRejectsPendingAccountAndAlreadyLinkedParticipant() async {
+        let service = TestMembershipService()
+        let store = service.managementStore()
+        let pending = service.member(status: .pending, accountID: UUID())
+        let approved = service.member(accountID: UUID())
+        let linked = service.row(accountID: UUID())
+        let free = service.row()
+        service.members += [pending, approved]
+        service.rows = [linked, free]
+        await store.load()
+        let pendingResult = await store.link(accountID: pending.accountID, participantID: free.id)
+        let linkedResult = await store.link(accountID: approved.accountID, participantID: linked.id)
+        XCTAssertFalse(pendingResult)
+        XCTAssertFalse(linkedResult)
+        XCTAssertTrue(service.commands.isEmpty)
+    }
+
+    @MainActor
+    func testMembershipLinkRejectsSecondActiveLink() async {
+        let service = TestMembershipService()
+        let store = service.managementStore()
+        let member = service.member(accountID: UUID())
+        let free = service.row()
+        service.members.append(member)
+        service.rows = [service.row(accountID: member.accountID), free]
+        await store.load()
+        let success = await store.link(accountID: member.accountID, participantID: free.id)
+        XCTAssertFalse(success)
+        XCTAssertTrue(service.commands.isEmpty)
+    }
+
+    @MainActor
+    func testMembershipLinkRechecksChangedConnectionBeforeSending() async {
+        let service = TestMembershipService()
+        let store = service.managementStore()
+        let member = service.member(accountID: UUID())
+        let original = service.row()
+        service.members.append(member)
+        service.rows = [original]
+        await store.load()
+        service.rows = [ClubParticipant(id: original.id, clubID: original.clubID, accountID: UUID(), displayName: original.displayName,
+                                       label: original.label, isActive: true, legacyPlayerID: nil)]
+        let success = await store.link(accountID: member.accountID, participantID: original.id)
+        XCTAssertFalse(success)
+        XCTAssertTrue(service.commands.isEmpty)
+    }
+
+    @MainActor
+    func testMembershipRevocationHidesSecretAndRetainsRetryID() async {
+        let service = TestMembershipService()
+        let store = service.managementStore()
+        await store.load()
+        await store.issueInvitation()
+        service.executeFails = true
+        let failed = await store.revokeInvitation()
+        XCTAssertFalse(failed)
+        XCTAssertNil(store.invitation)
+        XCTAssertNotNil(store.revokingInvitationID)
+        service.executeFails = false
+        let success = await store.revokeInvitation()
+        XCTAssertTrue(success)
+        XCTAssertNil(store.revokingInvitationID)
+        XCTAssertEqual(service.commands[0], service.commands[1])
+    }
+
+    @MainActor
+    func testMembershipManagementSuppressesConcurrentOperations() async {
+        let service = TestMembershipService()
+        let store = service.managementStore()
+        let pending = service.member(status: .pending, accountID: UUID())
+        service.members.append(pending)
+        await store.load()
+        service.onExecute = {
+            let duplicate = await store.approve(membershipID: pending.id)
+            XCTAssertFalse(duplicate)
+            await store.issueInvitation()
+            await store.load()
+        }
+        let success = await store.approve(membershipID: pending.id)
+        service.onExecute = nil
+        XCTAssertTrue(success)
+        XCTAssertEqual(service.commands.count, 1)
+        XCTAssertEqual(service.issueCount, 0)
+    }
+
     func testRosterCommandEncodesNullLabelWithoutAccountLink() throws {
         let command = try SaveParticipantCommand(clubID: UUID(), participantID: UUID(), displayName: " 선수 ", label: " \n", isActive: false)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(command)) as? [String: Any])
@@ -1044,6 +1386,113 @@ final class OurLeagueTests: XCTestCase {
         XCTAssertEqual(encoded["legacy_player_id"] as? Int, 1)
     }
 
+}
+
+@MainActor
+private final class TestMembershipService: LeagueMembershipService {
+    let accountID = UUID()
+    let clubID = UUID()
+    let token = String(repeating: "a", count: 64)
+    var members: [Membership] = []
+    var rows: [ClubParticipant] = []
+    var commands: [MembershipCommand] = []
+    var fetchFails = false
+    var executeFails = false
+    var issueFails = false
+    var badInvitation = false
+    var wrongReceipt = false
+    var ownFetchCount = 0
+    var clubFetchCount = 0
+    var issueCount = 0
+    var issuedExpiration: Date?
+    var onExecute: (() async -> Void)?
+    private var receipts: [UUID: MembershipReceipt] = [:]
+
+    func requestStore() -> MembershipRequestStore {
+        MembershipRequestStore(accountID: accountID) { self }
+    }
+
+    func managementStore(role: MembershipRole = .owner) -> MembershipManagementStore {
+        let membership = member(role: role)
+        members.append(membership)
+        let club = Club(id: clubID, name: "동호회", description: "", ownerAccountID: accountID, status: .active, legacyID: nil)
+        return MembershipManagementStore(membership: ClubMembership(membership: membership, club: club)) { self }
+    }
+
+    func member(role: MembershipRole = .member, status: MembershipStatus = .approved, accountID: UUID? = nil, clubID: UUID? = nil) -> Membership {
+        Membership(id: UUID(), clubID: clubID ?? self.clubID, accountID: accountID ?? self.accountID, role: role, status: status)
+    }
+
+    func row(accountID: UUID? = nil) -> ClubParticipant {
+        ClubParticipant(id: UUID(), clubID: clubID, accountID: accountID, displayName: "선수", label: nil, isActive: true, legacyPlayerID: nil)
+    }
+
+    func fetchOwnMemberships(accountID: UUID) async throws -> [Membership] {
+        XCTAssertEqual(accountID, self.accountID)
+        ownFetchCount += 1
+        if fetchFails { throw MembershipError.invalidResponse }
+        return members
+    }
+
+    func fetchClubMemberships(clubID: UUID, accountID: UUID) async throws -> [Membership] {
+        XCTAssertEqual(clubID, self.clubID)
+        XCTAssertEqual(accountID, self.accountID)
+        clubFetchCount += 1
+        if fetchFails { throw MembershipError.invalidResponse }
+        return members
+    }
+
+    func fetchParticipants(clubID: UUID, accountID: UUID) async throws -> [ClubParticipant] {
+        XCTAssertEqual(clubID, self.clubID)
+        XCTAssertEqual(accountID, self.accountID)
+        if fetchFails { throw MembershipError.invalidResponse }
+        return rows
+    }
+
+    func issueInvitation(clubID: UUID, accountID: UUID, expiresAt: Date) async throws -> MembershipInvitation {
+        XCTAssertEqual(clubID, self.clubID)
+        XCTAssertEqual(accountID, self.accountID)
+        issueCount += 1
+        issuedExpiration = expiresAt
+        if issueFails { throw MembershipError.permissionDenied }
+        return MembershipInvitation(id: UUID(), token: badInvitation ? "invalid" : token,
+                                    expiresAt: ISO8601DateFormatter().string(from: expiresAt))
+    }
+
+    func execute(_ command: MembershipCommand, accountID: UUID) async throws -> MembershipReceipt {
+        XCTAssertEqual(accountID, self.accountID)
+        commands.append(command)
+        await onExecute?()
+        if executeFails { throw MembershipError.permissionDenied }
+        if let receipt = receipts[command.requestID] { return receipt }
+        let receipt: MembershipReceipt
+        switch command.operation {
+        case .request:
+            let joined: Membership
+            if let existing = members.first(where: { $0.clubID == clubID && $0.accountID == accountID }) {
+                joined = existing
+            } else {
+                joined = member(status: .pending)
+                members.append(joined)
+            }
+            receipt = MembershipReceipt(membershipID: wrongReceipt ? UUID() : joined.id, participantID: nil, revoked: nil)
+        case .approve:
+            let index = try XCTUnwrap(members.firstIndex { $0.id == command.payload.membershipID })
+            let original = members[index]
+            members[index] = Membership(id: original.id, clubID: original.clubID, accountID: original.accountID, role: original.role, status: .approved)
+            receipt = MembershipReceipt(membershipID: original.id, participantID: nil, revoked: nil)
+        case .link:
+            let index = try XCTUnwrap(rows.firstIndex { $0.id == command.payload.participantID })
+            let original = rows[index]
+            rows[index] = ClubParticipant(id: original.id, clubID: original.clubID, accountID: command.payload.accountID,
+                                         displayName: original.displayName, label: original.label, isActive: original.isActive, legacyPlayerID: original.legacyPlayerID)
+            receipt = MembershipReceipt(membershipID: nil, participantID: original.id, revoked: nil)
+        case .revoke:
+            receipt = MembershipReceipt(membershipID: nil, participantID: nil, revoked: true)
+        }
+        receipts[command.requestID] = receipt
+        return receipt
+    }
 }
 
 @MainActor

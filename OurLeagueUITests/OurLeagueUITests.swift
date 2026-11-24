@@ -32,6 +32,8 @@ final class OurLeagueUITests: XCTestCase {
         XCTAssertTrue(signInButton.isHittable)
         XCTAssertFalse(app.staticTexts["authErrorMessage"].exists)
         XCTAssertFalse(app.buttons["createClubButton"].exists)
+        XCTAssertFalse(app.buttons["joinClubButton"].exists)
+        XCTAssertFalse(app.buttons["issueMembershipInvitationButton"].exists)
 
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Signed-out login screen"
